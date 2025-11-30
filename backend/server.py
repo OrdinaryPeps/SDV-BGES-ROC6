@@ -20,6 +20,7 @@ import random
 import string
 import redis.asyncio as redis
 import json
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -40,6 +41,25 @@ security = HTTPBearer()
 SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-min-32-characters-long-please-change-this')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+
+import httpx
+
+async def send_telegram_message(chat_id: str, text: str):
+    """Send message to Telegram user"""
+    if not BOT_TOKEN or not chat_id:
+        return
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            await client.post(url, json={
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "Markdown"
+            })
+    except Exception as e:
+        logging.error(f"Failed to send Telegram message: {e}")
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -449,8 +469,36 @@ async def update_ticket(
     if 'assigned_agent' in update_dict and update_dict['assigned_agent'] is None:
         update_dict['assigned_agent_name'] = None
         update_dict['status'] = 'open' # Revert to open if unassigned?
+    
+    # Check if this is a new assignment
+    is_new_assignment = (
+        update_data.assigned_agent and 
+        update_data.assigned_agent != ticket.get('assigned_agent')
+    )
+
+    result = await db.tickets.update_one(
+        {"id": ticket_id},
+        {"$set": update_dict}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Ticket update failed")
         
-    await db.tickets.update_one({"id": ticket_id}, {"$set": update_dict})
+    updated_ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
+    
+    # Send Telegram Notification if assigned
+    if is_new_assignment and updated_ticket.get('user_telegram_id'):
+        agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
+        ticket_number = updated_ticket.get('ticket_number', 'Unknown')
+        user_name = updated_ticket.get('user_telegram_name', 'User')
+        
+        message = (
+            f"Halo *{user_name}*,\n\n"
+            f"Tiket Anda *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
+            f"Mohon tunggu, kami sedang memprosesnya. 👨‍💻"
+        )
+        # Run in background to not block response
+        asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
     
     # Invalidate cache
     await redis_client.delete("dashboard:admin:stats:v2")
@@ -459,7 +507,7 @@ async def update_ticket(
     if update_data.assigned_agent:
         await redis_client.delete(f"dashboard:agent:{update_data.assigned_agent}:stats:v2")
         
-    return {"message": "Ticket updated"}
+    return Ticket(**updated_ticket)
 
 @api_router.delete("/tickets/{ticket_id}")
 async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current_user)):
