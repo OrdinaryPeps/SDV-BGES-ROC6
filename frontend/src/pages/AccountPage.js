@@ -53,7 +53,7 @@ export default function AccountPage({ user }) {
     <div className="space-y-6" data-testid="account-page">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Account Settings</h1>
-        <p className="text-slate-500 mt-1">Manage your account and security settings</p>
+        <p className="text-slate-500 mt-1">Kelola akun dan pengaturan keamanan Anda</p>
       </div>
 
       {/* Profile Info Card */}
@@ -61,9 +61,9 @@ export default function AccountPage({ user }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            Profile Information
+            Informasi Profil
           </CardTitle>
-          <CardDescription>Your account details</CardDescription>
+          <CardDescription>Detail akun Anda</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -107,14 +107,14 @@ export default function AccountPage({ user }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" />
-            Change Password
+            Ganti Kata Sandi
           </CardTitle>
-          <CardDescription>Update your password to keep your account secure</CardDescription>
+          <CardDescription>Perbarui kata sandi untuk menjaga keamanan akun</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
+              <Label htmlFor="current-password">Kata Sandi Saat Ini</Label>
               <Input
                 id="current-password"
                 data-testid="current-password"
@@ -127,7 +127,7 @@ export default function AccountPage({ user }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">Kata Sandi Baru</Label>
               <Input
                 id="new-password"
                 data-testid="new-password"
@@ -140,7 +140,7 @@ export default function AccountPage({ user }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Label htmlFor="confirm-password">Konfirmasi Kata Sandi Baru</Label>
               <Input
                 id="confirm-password"
                 data-testid="confirm-password"
@@ -153,7 +153,7 @@ export default function AccountPage({ user }) {
             </div>
 
             <Button type="submit" disabled={loading} data-testid="change-password-button">
-              {loading ? 'Changing...' : 'Change Password'}
+              {loading ? 'Memproses...' : 'Ganti Kata Sandi'}
             </Button>
           </form>
         </CardContent>
@@ -162,12 +162,12 @@ export default function AccountPage({ user }) {
       {/* Security Tips */}
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
-          <h3 className="font-semibold text-blue-900 mb-2">🔒 Security Tips</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">🔒 Tips Keamanan</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Use a strong password with at least 8 characters</li>
-            <li>• Include uppercase, lowercase, numbers, and symbols</li>
-            <li>• Don't reuse passwords from other accounts</li>
-            <li>• Change your password regularly</li>
+            <li>Gunakan kata sandi kuat minimal 8 karakter</li>
+            <li>Gunakan huruf besar, kecil, angka, dan simbol</li>
+            <li>Jangan gunakan kata sandi yang sama dengan akun lain</li>
+            <li>Ganti kata sandi secara berkala</li>
           </ul>
         </CardContent>
       </Card>

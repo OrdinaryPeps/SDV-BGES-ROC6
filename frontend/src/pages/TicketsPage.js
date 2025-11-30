@@ -90,7 +90,7 @@ export default function TicketsPage({ user }) {
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Tickets</h1>
         <p className="text-slate-500 mt-1">
-          {user.role === 'agent' ? 'Tiket yang ditugaskan kepada Anda dan tiket yang tersedia untuk diambil' : 'Manage and track all tickets'}
+          {user.role === 'agent' ? 'Tiket yang ditugaskan kepada Anda dan tiket yang tersedia untuk diambil' : 'Kelola dan pantau semua tiket'}
         </p>
       </div>
 

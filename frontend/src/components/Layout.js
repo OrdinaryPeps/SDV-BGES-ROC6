@@ -110,7 +110,7 @@ export default function Layout({ user, onLogout, children }) {
               <div>
                 <h1 className="text-xl font-bold text-slate-900 hidden md:block">Fulfillment Provisioning BGES Bot Dashboard</h1>
                 <h1 className="text-lg font-bold text-slate-900 md:hidden">BGES Dashboard</h1>
-                <p className="text-xs text-slate-500 hidden md:block">Ticket Management System</p>
+                <p className="text-xs text-slate-500 hidden md:block">Sistem Manajemen Tiket</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

@@ -461,7 +461,7 @@ export default function DashboardPage({ user }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 mt-1">Overview of ticket management system</p>
+          <p className="text-slate-500 mt-1">Ringkasan sistem manajemen tiket</p>
         </div>
         {user.role === 'admin' && (
           <div className="flex gap-2">

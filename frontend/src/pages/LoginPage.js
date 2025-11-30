@@ -59,7 +59,7 @@ export default function LoginPage({ onLogin }) {
             <Ticket className="w-10 h-10 text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Fulfillment Provisioning BGES Bot Dashboard</h1>
-          <p className="text-blue-100">Ticket Management System</p>
+          <p className="text-blue-100">Sistem Manajemen Tiket</p>
         </div>
 
         <Card className="shadow-2xl border-0">

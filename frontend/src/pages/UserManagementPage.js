@@ -111,7 +111,7 @@ export default function UserManagementPage({ user }) {
     <div className="space-y-6" data-testid="user-management-page">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
-        <p className="text-slate-500 mt-1">Manage agent registrations and passwords</p>
+        <p className="text-slate-500 mt-1">Kelola pendaftaran agen dan kata sandi</p>
       </div>
 
       {/* Pending Approvals */}
