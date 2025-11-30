@@ -52,7 +52,7 @@ export default function TicketsPage({ user }) {
     try {
       await axios.put(`${API}/tickets/${ticketId}`, {
         assigned_agent: user.id,
-        assigned_agent_name: user.username,
+        assigned_agent_name: user.full_name || user.username,
         status: 'in_progress'
       });
       toast.success('Ticket claimed successfully!');

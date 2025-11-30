@@ -62,108 +62,29 @@ class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
+    full_name: Optional[str] = None
     role: str  # "admin" or "agent"
     status: str = "pending"  # "pending" or "approved"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
     username: str
+    full_name: str
     password: str
     role: str = "agent"
+
 
 class UserLogin(BaseModel):
     username: str
     password: str
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    user: User
-
-class Ticket(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    ticket_number: str
-    user_telegram_id: Optional[str] = None
-    user_telegram_name: Optional[str] = None
-    category: str
-    description: str
-    permintaan: Optional[str] = None  # PUSH BIMA, RECONFIG, REPLACE ONT, TROUBLESHOOT, INTEGRASI
-    
-    # Detailed fields from bot
-    tipe_transaksi: Optional[str] = None  # AO, PDA, MO, SO, DO
-    order_number: Optional[str] = None
-    wonum: Optional[str] = None
-    tiket_fo: Optional[str] = None
-    nd_internet_voice: Optional[str] = None
-    password: Optional[str] = None
-    paket_inet: Optional[str] = None
-    sn_lama: Optional[str] = None
-    sn_baru: Optional[str] = None
-    sn_ap: Optional[str] = None
-    mac_ap: Optional[str] = None
-    ssid: Optional[str] = None
-    tipe_ont: Optional[str] = None
-    gpon_slot_port: Optional[str] = None
-    vlan: Optional[str] = None
-    svlan: Optional[str] = None
-    cvlan: Optional[str] = None
-    task_bima: Optional[str] = None
-    ownergroup: Optional[str] = None
-    link_chat: Optional[str] = None
-    keterangan_lainnya: Optional[str] = None
-    
-    status: str = "open"  # open, pending, in_progress, completed
-    assigned_agent: Optional[str] = None
-    assigned_agent_name: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
-
-# ============= Utility Functions =============
-
-def parse_datetime(dt_val):
-    """Helper to parse datetime and ensure timezone awareness"""
-    if not dt_val:
-        return None
-    
-    dt = None
-    if isinstance(dt_val, str):
-        try:
-            dt = datetime.fromisoformat(dt_val)
-        except ValueError:
-            return None
-    elif isinstance(dt_val, datetime):
-        dt = dt_val
-    
-    if dt:
-        # Ensure timezone awareness (assume UTC if naive)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    return None
-
-def generate_ticket_number():
-    """Generate ticket number in format INC${MM}${DD}${YYYY}${HH}${mm}${ss}${randomText}"""
-    now = datetime.now()
-    MM = str(now.month).zfill(2)
-    DD = str(now.day).zfill(2)
-    YYYY = now.year
-    HH = str(now.hour).zfill(2)
-    mm = str(now.minute).zfill(2)
-    ss = str(now.second).zfill(2)
-    # Generate 3 random uppercase alphanumeric characters
-    random_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
-    return f"INC{MM}{DD}{YYYY}{HH}{mm}{ss}{random_text}"
-
 class TicketCreate(BaseModel):
-    user_telegram_id: Optional[str] = None
-    user_telegram_name: Optional[str] = None
+    ticket_number: str
+    user_telegram_id: str
+    user_telegram_name: str
     category: str
     description: str
     permintaan: Optional[str] = None
-    
-    # Detailed fields
     tipe_transaksi: Optional[str] = None
     order_number: Optional[str] = None
     wonum: Optional[str] = None
@@ -186,10 +107,18 @@ class TicketCreate(BaseModel):
     link_chat: Optional[str] = None
     keterangan_lainnya: Optional[str] = None
 
-class TicketUpdate(BaseModel):
-    status: Optional[str] = None
+class Ticket(TicketCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    status: str = "open" # open, pending, in_progress, completed
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     assigned_agent: Optional[str] = None
     assigned_agent_name: Optional[str] = None
+
+class CommentCreate(BaseModel):
+    comment: str
 
 class Comment(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -202,28 +131,15 @@ class Comment(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sent_to_telegram: bool = False
 
-class CommentCreate(BaseModel):
-    comment: str
+class AgentPerformance(BaseModel):
+    id: str
+    username: str
+    total_tickets: int
+    completed: int
+    in_progress: int
+    avg_time: float
+    rating: float
 
-class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
-
-class PasswordReset(BaseModel):
-    new_password: str
-
-# New Dashboard Models
-class DashboardStatsAdmin(BaseModel):
-    today: dict  # {received, completed, in_progress, open}
-    this_month: dict  # {received, completed, avg_time, active_agents}
-    total: dict  # {all_tickets, completed, total_agents}
-
-class DashboardStatsAgent(BaseModel):
-    today: dict  # {received, completed, in_progress, pending}
-    this_month: dict  # {received, completed, avg_time}
-    total: dict  # {all_tickets, completed}
-
-# Old model - keep for backward compatibility
 class DashboardStats(BaseModel):
     total_tickets: int
     open_tickets: int
@@ -232,7 +148,7 @@ class DashboardStats(BaseModel):
     completed_tickets: int
     tickets_today: int
     avg_completion_time_hours: float
-    agent_performance: List[dict]
+    agent_performance: List[AgentPerformance]
 
 class AgentStats(BaseModel):
     total_tickets: int
@@ -241,43 +157,48 @@ class AgentStats(BaseModel):
     avg_completion_time_hours: float
     rating: float
 
-# ============= Auth Functions =============
-
+# Security Utilities
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def create_access_token(data: dict):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    
-    user = await db.users.find_one({"username": username}, {"_id": 0})
+        
+    user = await db.users.find_one({"username": username})
     if user is None:
         raise credentials_exception
-    
+        
     return User(**user)
 
-# ============= Routes =============
+def parse_datetime(dt):
+    if isinstance(dt, str):
+        return datetime.fromisoformat(dt)
+    return dt
 
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserCreate):
@@ -290,8 +211,9 @@ async def register(user_data: UserCreate):
     hashed_password = get_password_hash(user_data.password)
     user = User(
         username=user_data.username,
+        full_name=user_data.full_name,
         role=user_data.role,
-        status="pending" if user_data.role == "agent" else "approved"
+        status="pending" # All new registrations must be approved by admin
     )
     
     user_dict = user.model_dump()
@@ -301,26 +223,27 @@ async def register(user_data: UserCreate):
     await db.users.insert_one(user_dict)
     return user
 
-@api_router.post("/auth/login", response_model=Token)
-async def login(user_data: UserLogin):
-    # Find user
-    user = await db.users.find_one({"username": user_data.username}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@api_router.post("/auth/login")
+async def login(form_data: UserLogin):
+    user = await db.users.find_one({"username": form_data.username})
+    if not user or not verify_password(form_data.password, user['password_hash']):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    # Verify password
-    if not verify_password(user_data.password, user['password_hash']):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Check if approved
     if user['status'] != 'approved':
-        raise HTTPException(status_code=403, detail="Account pending approval")
+        raise HTTPException(status_code=400, detail="Account not approved yet")
+        
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user['username'], "role": user['role'], "id": user['id']},
+        expires_delta=access_token_expires
+    )
     
-    # Create token
-    access_token = create_access_token(data={"sub": user['username']})
-    
-    user_obj = User(**user)
-    return Token(access_token=access_token, token_type="bearer", user=user_obj)
+    return {"access_token": access_token, "token_type": "bearer", "user": User(**user)}
 
 @api_router.get("/users/pending", response_model=List[User])
 async def get_pending_users(current_user: User = Depends(get_current_user)):
@@ -330,21 +253,34 @@ async def get_pending_users(current_user: User = Depends(get_current_user)):
     users = await db.users.find({"status": "pending"}, {"_id": 0}).to_list(1000)
     return [User(**u) for u in users]
 
-@api_router.put("/users/{user_id}/approve", response_model=User)
-async def approve_user(user_id: str, current_user: User = Depends(get_current_user)):
+@api_router.get("/users/agents", response_model=List[User])
+async def get_agents(current_user: User = Depends(get_current_user)):
+    # Allow agents to see other agents for assignment if needed, or just admin
+    # For now, let's allow both
+    users = await db.users.find({"role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
+    return [User(**u) for u in users]
+
+@api_router.put("/users/{user_id}/approve")
+async def approve_user(
+    user_id: str, 
+    role: str = "agent", # Default to agent if not specified
+    current_user: User = Depends(get_current_user)
+):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
+    if role not in ["agent", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
     result = await db.users.update_one(
         {"id": user_id},
-        {"$set": {"status": "approved"}}
+        {"$set": {"status": "approved", "role": role}}
     )
     
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    return User(**user)
+    return {"message": f"User approved as {role}"}
 
 @api_router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
@@ -352,112 +288,46 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
         raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await db.users.delete_one({"id": user_id})
+    
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return {"message": "User deleted successfully"}
+    return {"message": "User deleted"}
 
-@api_router.put("/users/change-password")
-async def change_password(
-    password_data: PasswordChange,
-    current_user: User = Depends(get_current_user)
-):
-    """User change their own password"""
-    # Get user with password hash
-    user = await db.users.find_one({"id": current_user.id})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Verify current password
-    if not verify_password(password_data.current_password, user['password_hash']):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
-    
-    # Update password
-    new_hash = get_password_hash(password_data.new_password)
-    await db.users.update_one(
-        {"id": current_user.id},
-        {"$set": {"password_hash": new_hash}}
-    )
-    
-    return {"message": "Password changed successfully"}
+class ResetPasswordRequest(BaseModel):
+    new_password: str
 
 @api_router.put("/users/{user_id}/reset-password")
-async def reset_user_password(
-    user_id: str,
-    password_data: PasswordReset,
-    current_user: User = Depends(get_current_user)
-):
-    """Admin reset user password"""
+async def reset_password(user_id: str, request: ResetPasswordRequest, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Update password
-    new_hash = get_password_hash(password_data.new_password)
+    hashed_password = get_password_hash(request.new_password)
     result = await db.users.update_one(
         {"id": user_id},
-        {"$set": {"password_hash": new_hash}}
+        {"$set": {"password_hash": hashed_password}}
     )
     
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Check if user exists but password is same (not modified)
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
     
     return {"message": "Password reset successfully"}
 
-@api_router.get("/users/agents", response_model=List[User])
-async def get_agents(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    agents = await db.users.find({"role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
-    return [User(**a) for a in agents]
-
-# ============= Ticket Routes =============
-
-@api_router.post("/webhook/telegram", response_model=Ticket)
-async def receive_telegram_ticket(ticket_data: TicketCreate):
-    # Generate ticket number
-    ticket_number = generate_ticket_number()
-    
-    ticket = Ticket(
-        ticket_number=ticket_number,
-        user_telegram_id=ticket_data.user_telegram_id,
-        user_telegram_name=ticket_data.user_telegram_name,
-        category=ticket_data.category,
-        description=ticket_data.description,
-        permintaan=ticket_data.permintaan,
-        tipe_transaksi=ticket_data.tipe_transaksi,
-        order_number=ticket_data.order_number,
-        wonum=ticket_data.wonum,
-        tiket_fo=ticket_data.tiket_fo,
-        nd_internet_voice=ticket_data.nd_internet_voice,
-        password=ticket_data.password,
-        paket_inet=ticket_data.paket_inet,
-        sn_lama=ticket_data.sn_lama,
-        sn_baru=ticket_data.sn_baru,
-        sn_ap=ticket_data.sn_ap,
-        mac_ap=ticket_data.mac_ap,
-        ssid=ticket_data.ssid,
-        tipe_ont=ticket_data.tipe_ont,
-        gpon_slot_port=ticket_data.gpon_slot_port,
-        vlan=ticket_data.vlan,
-        svlan=ticket_data.svlan,
-        cvlan=ticket_data.cvlan,
-        task_bima=ticket_data.task_bima,
-        ownergroup=ticket_data.ownergroup,
-        link_chat=ticket_data.link_chat,
-        keterangan_lainnya=ticket_data.keterangan_lainnya,
-        status="open"
-    )
+@api_router.post("/tickets", response_model=Ticket)
+async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(get_current_user)):
+    # Usually tickets are created by Bot, but maybe Admin can create too?
+    # For now, let's allow authenticated users
+    ticket = Ticket(**ticket_data.model_dump())
     
     ticket_dict = ticket.model_dump()
     ticket_dict['created_at'] = ticket_dict['created_at'].isoformat()
-    ticket_dict['updated_at'] = ticket_dict['updated_at'].isoformat()
-    if ticket_dict['completed_at']:
-        ticket_dict['completed_at'] = ticket_dict['completed_at'].isoformat()
     
     await db.tickets.insert_one(ticket_dict)
     
-    # Invalidate admin dashboard cache so it updates immediately
+    # Invalidate cache
     await redis_client.delete("dashboard:admin:stats")
     
     return ticket
@@ -468,69 +338,48 @@ async def get_tickets(
     current_user: User = Depends(get_current_user)
 ):
     query = {}
-    
-    # If agent, only show assigned tickets
-    if current_user.role == "agent":
-        query["assigned_agent"] = current_user.id
-    
     if status:
-        query["status"] = status
+        query['status'] = status
+        
+    if current_user.role == "agent":
+        # Agents see their assigned tickets
+        # AND tickets they can claim (open tickets)?
+        # For "My Tickets" tab, usually assigned to them
+        # But if status is "open", they might want to see available ones
+        if status == 'open':
+             # Open tickets are unassigned or assigned to them?
+             # Usually "open" means unassigned in this context
+             pass
+        else:
+             query['assigned_agent'] = current_user.id
     
-    tickets = await db.tickets.find(query, {"_id": 0}).to_list(1000)
+    tickets = await db.tickets.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    for ticket in tickets:
-        if isinstance(ticket.get('created_at'), str):
-            ticket['created_at'] = datetime.fromisoformat(ticket['created_at'])
-        if isinstance(ticket.get('updated_at'), str):
-            ticket['updated_at'] = datetime.fromisoformat(ticket['updated_at'])
-        if ticket.get('completed_at') and isinstance(ticket['completed_at'], str):
-            ticket['completed_at'] = datetime.fromisoformat(ticket['completed_at'])
-    
+    # Convert datetime strings back to datetime objects for Pydantic
+    for t in tickets:
+        if isinstance(t.get('created_at'), str):
+            t['created_at'] = datetime.fromisoformat(t['created_at'])
+        if t.get('updated_at') and isinstance(t.get('updated_at'), str):
+            t['updated_at'] = datetime.fromisoformat(t['updated_at'])
+        if t.get('completed_at') and isinstance(t.get('completed_at'), str):
+            t['completed_at'] = datetime.fromisoformat(t['completed_at'])
+            
     return [Ticket(**t) for t in tickets]
 
-@api_router.get("/tickets/categories")
-async def get_ticket_categories(current_user: User = Depends(get_current_user)):
-    """Get list of all unique ticket categories"""
-    tickets = await db.tickets.find({}, {"_id": 0, "category": 1}).to_list(10000)
-    categories = list(set(t['category'] for t in tickets if t.get('category')))
-    categories.sort()
-    return {"categories": categories}
-
-@api_router.get("/tickets/years")
-async def get_ticket_years(current_user: User = Depends(get_current_user)):
-    """Get list of years from tickets for filtering"""
-    tickets = await db.tickets.find({}, {"_id": 0, "created_at": 1}).to_list(10000)
-    years = set()
-    for t in tickets:
-        created_at = t.get('created_at')
-        if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at)
-            years.add(created_at.year)
-    return {"years": sorted(list(years), reverse=True)}
-
 @api_router.get("/tickets/open/available", response_model=List[Ticket])
-async def get_open_available_tickets(current_user: User = Depends(get_current_user)):
-    """Get all open tickets (not assigned to anyone yet) - for agents to claim"""
-    # Query: status is "open" AND (assigned_agent is null OR doesn't exist)
+async def get_available_tickets(current_user: User = Depends(get_current_user)):
+    # Tickets that are open and NOT assigned
     query = {
         "status": "open",
-        "$or": [
-            {"assigned_agent": None},
-            {"assigned_agent": {"$exists": False}}
-        ]
+        "assigned_agent": None
     }
     
-    tickets = await db.tickets.find(query, {"_id": 0}).to_list(1000)
+    tickets = await db.tickets.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    for ticket in tickets:
-        if isinstance(ticket.get('created_at'), str):
-            ticket['created_at'] = datetime.fromisoformat(ticket['created_at'])
-        if isinstance(ticket.get('updated_at'), str):
-            ticket['updated_at'] = datetime.fromisoformat(ticket['updated_at'])
-        if ticket.get('completed_at') and isinstance(ticket['completed_at'], str):
-            ticket['completed_at'] = datetime.fromisoformat(ticket['completed_at'])
-    
+    for t in tickets:
+        if isinstance(t.get('created_at'), str):
+            t['created_at'] = datetime.fromisoformat(t['created_at'])
+            
     return [Ticket(**t) for t in tickets]
 
 @api_router.get("/tickets/{ticket_id}", response_model=Ticket)
@@ -538,98 +387,72 @@ async def get_ticket(ticket_id: str, current_user: User = Depends(get_current_us
     ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    
+        
     if isinstance(ticket.get('created_at'), str):
         ticket['created_at'] = datetime.fromisoformat(ticket['created_at'])
-    if isinstance(ticket.get('updated_at'), str):
+    if ticket.get('updated_at') and isinstance(ticket.get('updated_at'), str):
         ticket['updated_at'] = datetime.fromisoformat(ticket['updated_at'])
-    if ticket.get('completed_at') and isinstance(ticket['completed_at'], str):
+    if ticket.get('completed_at') and isinstance(ticket.get('completed_at'), str):
         ticket['completed_at'] = datetime.fromisoformat(ticket['completed_at'])
-    
+        
     return Ticket(**ticket)
 
-@api_router.put("/tickets/{ticket_id}", response_model=Ticket)
+class TicketUpdate(BaseModel):
+    status: Optional[str] = None
+    assigned_agent: Optional[str] = None
+    assigned_agent_name: Optional[str] = None
+
+@api_router.put("/tickets/{ticket_id}")
 async def update_ticket(
     ticket_id: str,
-    ticket_update: TicketUpdate,
+    update_data: TicketUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    # First, get the current ticket to check its state
-    current_ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
-    if not current_ticket:
+    ticket = await db.tickets.find_one({"id": ticket_id})
+    if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
     
-    # Check if trying to claim/assign ticket
-    if 'assigned_agent' in ticket_update.model_dump(exclude_unset=True):
-        # Skip conflict check if:
-        # 1. Admin is performing the update (admin can reassign/unassign freely)
-        # 2. Unassigning ticket (assigned_agent = None, resetting to available)
-        is_admin = current_user.role == 'admin'
-        is_unassigning = ticket_update.assigned_agent is None
+    # Check for conflict if assigning agent
+    if update_data.assigned_agent and ticket.get('assigned_agent') and ticket.get('assigned_agent') != update_data.assigned_agent:
+        # If ticket is already assigned to someone else
+        raise HTTPException(status_code=409, detail="Ticket already assigned to another agent")
         
-        if not is_admin and not is_unassigning:
-            # If ticket already has an assigned agent and it's different from current assignment
-            if current_ticket.get('assigned_agent') and current_ticket.get('assigned_agent') != ticket_update.assigned_agent:
-                # Ticket already claimed by another agent
-                raise HTTPException(
-                    status_code=409, 
-                    detail=f"Ticket sudah diambil oleh {current_ticket.get('assigned_agent_name', 'agent lain')}. Silakan pilih ticket lain."
-                )
+    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
     
-    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if update_data.status == 'completed':
+        update_dict['completed_at'] = datetime.now(timezone.utc).isoformat()
+        
+    # If unassigning (assigned_agent is explicitly None)
+    if 'assigned_agent' in update_dict and update_dict['assigned_agent'] is None:
+        update_dict['assigned_agent_name'] = None
+        update_dict['status'] = 'open' # Revert to open if unassigned?
+        
+    await db.tickets.update_one({"id": ticket_id}, {"$set": update_dict})
     
-    if ticket_update.status:
-        update_data["status"] = ticket_update.status
-        if ticket_update.status == "completed":
-            update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
-    
-    # Allow explicitly setting assigned_agent to None (unassign)
-    if 'assigned_agent' in ticket_update.model_dump(exclude_unset=True):
-        update_data["assigned_agent"] = ticket_update.assigned_agent
-        update_data["assigned_agent_name"] = ticket_update.assigned_agent_name
-    
-    result = await db.tickets.update_one(
-        {"id": ticket_id},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
-    
-    if isinstance(ticket.get('created_at'), str):
-        ticket['created_at'] = datetime.fromisoformat(ticket['created_at'])
-    if isinstance(ticket.get('updated_at'), str):
-        ticket['updated_at'] = datetime.fromisoformat(ticket['updated_at'])
-    if ticket.get('completed_at') and isinstance(ticket['completed_at'], str):
-        ticket['completed_at'] = datetime.fromisoformat(ticket['completed_at'])
-    
-    # Invalidate caches
+    # Invalidate cache
     await redis_client.delete("dashboard:admin:stats")
     if ticket.get('assigned_agent'):
-        await redis_client.delete(f"dashboard:agent:{ticket.get('assigned_agent')}:stats")
-    
-    return Ticket(**ticket)
+        await redis_client.delete(f"dashboard:agent:{ticket['assigned_agent']}:stats")
+    if update_data.assigned_agent:
+        await redis_client.delete(f"dashboard:agent:{update_data.assigned_agent}:stats")
+        
+    return {"message": "Ticket updated"}
 
 @api_router.delete("/tickets/{ticket_id}")
 async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+        
     result = await db.tickets.delete_one({"id": ticket_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    # Also delete related comments
-    await db.comments.delete_many({"ticket_id": ticket_id})
-    
-    # Invalidate admin dashboard cache
+        
+    # Invalidate cache
     await redis_client.delete("dashboard:admin:stats")
-    
-    return {"message": "Ticket deleted successfully"}
+        
+    return {"message": "Ticket deleted"}
 
-# ============= Comment Routes =============
 
 @api_router.post("/tickets/{ticket_id}/comments", response_model=Comment)
 async def add_comment(
@@ -643,10 +466,13 @@ async def add_comment(
         raise HTTPException(status_code=404, detail="Ticket not found")
     
     # Create comment with sent_to_telegram=False (bot will pick this up)
+    # Use full_name if available, otherwise username
+    display_name = current_user.full_name if current_user.full_name else current_user.username
+    
     comment = Comment(
         ticket_id=ticket_id,
         user_id=current_user.id,
-        username=current_user.username,
+        username=display_name, # Store display name in username field for compatibility
         role=current_user.role,
         comment=comment_data.comment,
         sent_to_telegram=False  # Bot needs to send this to user
@@ -657,7 +483,7 @@ async def add_comment(
     
     await db.comments.insert_one(comment_dict)
     
-    logger.info(f"Comment added by {current_user.username} on ticket {ticket['ticket_number']}, awaiting bot notification")
+    logger.info(f"Comment added by {current_user.username} ({display_name}) on ticket {ticket['ticket_number']}, awaiting bot notification")
     
     return comment
 
@@ -1694,3 +1520,7 @@ async def seed_data():
             agent_dict['password_hash'] = get_password_hash("admin123")
             await db.users.insert_one(agent_dict)
             logger.info(f"Agent {agent_username} created")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

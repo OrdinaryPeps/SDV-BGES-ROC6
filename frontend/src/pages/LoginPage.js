@@ -11,7 +11,7 @@ import { Ticket, Loader2 } from 'lucide-react';
 
 export default function LoginPage({ onLogin }) {
   const [loginData, setLoginData] = useState({ username: '', password: '' });
-  const [registerData, setRegisterData] = useState({ username: '', password: '', confirmPassword: '' });
+  const [registerData, setRegisterData] = useState({ username: '', full_name: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
@@ -38,11 +38,12 @@ export default function LoginPage({ onLogin }) {
     try {
       await axios.post(`${API}/auth/register`, {
         username: registerData.username,
+        full_name: registerData.full_name,
         password: registerData.password,
         role: 'agent'
       });
       toast.success('Registration successful! Please wait for admin approval.');
-      setRegisterData({ username: '', password: '', confirmPassword: '' });
+      setRegisterData({ username: '', full_name: '', password: '', confirmPassword: '' });
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Registration failed');
     } finally {
@@ -107,6 +108,17 @@ export default function LoginPage({ onLogin }) {
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="register-fullname">Full Name</Label>
+                    <Input
+                      id="register-fullname"
+                      data-testid="register-fullname"
+                      value={registerData.full_name}
+                      onChange={(e) => setRegisterData({ ...registerData, full_name: e.target.value })}
+                      required
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="register-username">Username</Label>
                     <Input
                       id="register-username"
@@ -114,7 +126,7 @@ export default function LoginPage({ onLogin }) {
                       value={registerData.username}
                       onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
                       required
-                      placeholder="Choose a username"
+                      placeholder="Choose a username (no spaces)"
                     />
                   </div>
                   <div className="space-y-2">

@@ -120,7 +120,7 @@ export default function AgentPerformancePage({ user }) {
               {user.username.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1">
-              <h3 className="text-2xl font-bold text-slate-900">{user.username}</h3>
+              <h3 className="text-2xl font-bold text-slate-900">{user.full_name || user.username}</h3>
               <p className="text-slate-500">Agent Performance</p>
             </div>
             <div className="text-center md:text-right w-full md:w-auto mt-4 md:mt-0">

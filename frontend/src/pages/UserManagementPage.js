@@ -50,10 +50,10 @@ export default function UserManagementPage({ user }) {
     }
   };
 
-  const handleApprove = async (userId) => {
+  const handleApproveUser = async (userId, role) => {
     try {
-      await axios.put(`${API}/users/${userId}/approve`);
-      toast.success('User approved successfully');
+      await axios.put(`${API}/users/${userId}/approve?role=${role}`);
+      toast.success(`User approved as ${role}`);
       fetchPendingUsers();
       fetchAgents();
     } catch (error) {
@@ -61,13 +61,13 @@ export default function UserManagementPage({ user }) {
     }
   };
 
-  const handleReject = async (userId) => {
+  const handleDeleteUser = async (userId) => {
     try {
       await axios.delete(`${API}/users/${userId}`);
-      toast.success('User rejected successfully');
+      toast.success('User deleted successfully');
       fetchPendingUsers();
     } catch (error) {
-      toast.error('Failed to reject user');
+      toast.error('Failed to delete user');
     }
   };
 
@@ -138,7 +138,8 @@ export default function UserManagementPage({ user }) {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">
-                          {pendingUser.username}
+                          {pendingUser.full_name || pendingUser.username}
+                          {pendingUser.full_name && <span className="text-sm font-normal text-slate-500 ml-2">({pendingUser.username})</span>}
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline" className="capitalize">
@@ -153,25 +154,28 @@ export default function UserManagementPage({ user }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto justify-end">
-                      <Button
-                        onClick={() => handleApprove(pendingUser.id)}
-                        className="gap-2 bg-green-600 hover:bg-green-700"
-                        data-testid={`approve-${pendingUser.username}`}
-                      >
-                        <Check className="w-4 h-4" />
-                        Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleReject(pendingUser.id)}
-                        variant="destructive"
-                        className="gap-2"
-                        data-testid={`reject-${pendingUser.username}`}
-                      >
-                        <X className="w-4 h-4" />
-                        Reject
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4 md:mt-0 md:ml-auto">
+                    <Button
+                      onClick={() => handleApproveUser(pendingUser.id, 'agent')}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Approve as Agent
+                    </Button>
+                    <Button
+                      onClick={() => handleApproveUser(pendingUser.id, 'admin')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Approve as Admin
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDeleteUser(pendingUser.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -204,7 +208,8 @@ export default function UserManagementPage({ user }) {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">
-                          {agent.username}
+                          {agent.full_name || agent.username}
+                          {agent.full_name && <span className="text-sm font-normal text-slate-500 ml-2">({agent.username})</span>}
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline" className="capitalize">

@@ -121,7 +121,7 @@ export default function Layout({ user, onLogout, children }) {
                       {user.username.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="text-left hidden md:block">
-                      <p className="text-sm font-medium text-slate-900">{user.username}</p>
+                      <p className="text-sm font-medium text-slate-900">{user.full_name || user.username}</p>
                       <p className="text-xs text-slate-500 capitalize">{user.role}</p>
                     </div>
                   </Button>

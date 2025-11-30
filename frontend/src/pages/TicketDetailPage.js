@@ -84,7 +84,7 @@ export default function TicketDetailPage({ user }) {
     try {
       const updateData = agentId === 'none'
         ? { assigned_agent: null, assigned_agent_name: null }
-        : { assigned_agent: agentId, assigned_agent_name: agent?.username };
+        : { assigned_agent: agentId, assigned_agent_name: agent?.full_name || agent?.username };
 
       await axios.put(`${API}/tickets/${ticketId}`, updateData);
       toast.success(agentId === 'none' ? 'Agent unassigned - ticket available for claim' : 'Agent assigned successfully');
