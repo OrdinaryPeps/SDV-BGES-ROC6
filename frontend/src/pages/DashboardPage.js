@@ -908,7 +908,7 @@ export default function DashboardPage({ user }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {performanceByProduct.data.map((row, index) => (
+                    {Array.isArray(performanceByProduct.data) ? performanceByProduct.data.map((row, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{row.product}</TableCell>
                         <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
@@ -917,7 +917,13 @@ export default function DashboardPage({ user }) {
                         <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
                         <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
                       </TableRow>
-                    ))}
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4 text-slate-500">
+                          No performance data available
+                        </TableCell>
+                      </TableRow>
+                    )}
                     {performanceByProduct.grand_total && (
                       <TableRow className="bg-slate-100 font-bold border-t-2 border-slate-300">
                         <TableCell className="font-bold">Grand Total</TableCell>
