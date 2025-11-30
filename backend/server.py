@@ -484,6 +484,12 @@ async def update_ticket(
         update_data.assigned_agent and 
         update_data.assigned_agent != ticket.get('assigned_agent')
     )
+    
+    # Check if status is changing to completed
+    is_completed = (
+        update_data.status == 'completed' and
+        ticket.get('status') != 'completed'
+    )
 
     result = await db.tickets.update_one(
         {"id": ticket_id},
@@ -512,6 +518,21 @@ async def update_ticket(
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
         else:
             logging.warning(f"No user_telegram_id found for ticket {ticket_id}, skipping notification")
+            
+    # Send Telegram Notification if completed
+    if is_completed:
+        logging.info(f"Ticket {ticket_id} completed. Sending notification to User ID: {updated_ticket.get('user_telegram_id')}")
+        if updated_ticket.get('user_telegram_id'):
+            agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
+            ticket_number = updated_ticket.get('ticket_number', 'Unknown')
+            user_name = updated_ticket.get('user_telegram_name', 'User')
+            
+            message = (
+                f"Halo *{user_name}*,\n\n"
+                f"Tiket Anda *{ticket_number}* telah *SELESAI* dikerjakan oleh *{agent_name}*.\n"
+                f"Terima kasih telah menggunakan layanan kami! ✅"
+            )
+            asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
     
     # Invalidate cache
     await redis_client.delete("dashboard:admin:stats:v2")
