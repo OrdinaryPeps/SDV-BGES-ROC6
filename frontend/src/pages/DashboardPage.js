@@ -35,6 +35,7 @@ export default function DashboardPage({ user }) {
   const [loadingByProduct, setLoadingByProduct] = useState(false);
 
   useEffect(() => {
+    console.log('DashboardPage v0.1.1 loaded');
     fetchStats();
     if (user.role === 'admin') {
       fetchAgents();
