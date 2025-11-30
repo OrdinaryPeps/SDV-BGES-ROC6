@@ -238,7 +238,7 @@ async def register(user_data: UserCreate):
     # Check if username exists
     existing_user = await db.users.find_one({"username": user_data.username})
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="Username sudah terdaftar")
     
     # Create user
     hashed_password = get_password_hash(user_data.password)
@@ -263,12 +263,12 @@ async def login(form_data: UserLogin):
     if not user or not verify_password(form_data.password, user['password_hash']):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Salah username atau password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     if user['status'] != 'approved':
-        raise HTTPException(status_code=400, detail="Account not approved yet")
+        raise HTTPException(status_code=400, detail="Akun belum disetujui")
         
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -281,7 +281,7 @@ async def login(form_data: UserLogin):
 @api_router.get("/users/pending", response_model=List[User])
 async def get_pending_users(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     users = await db.users.find({"status": "pending"}, {"_id": 0}).to_list(1000)
     return [User(**u) for u in users]
@@ -300,7 +300,7 @@ async def approve_user(
     current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     if role not in ["agent", "admin"]:
         raise HTTPException(status_code=400, detail="Invalid role")
@@ -311,19 +311,19 @@ async def approve_user(
     )
     
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
     
     return {"message": f"User approved as {role}"}
 
 @api_router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     result = await db.users.delete_one({"id": user_id})
     
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
     
     return {"message": "User deleted"}
 
@@ -333,7 +333,7 @@ class ResetPasswordRequest(BaseModel):
 @api_router.put("/users/{user_id}/reset-password")
 async def reset_password(user_id: str, request: ResetPasswordRequest, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     hashed_password = get_password_hash(request.new_password)
     result = await db.users.update_one(
@@ -345,9 +345,9 @@ async def reset_password(user_id: str, request: ResetPasswordRequest, current_us
         # Check if user exists but password is same (not modified)
         user = await db.users.find_one({"id": user_id})
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="User tidak ditemukan")
     
-    return {"message": "Password reset successfully"}
+    return {"message": "Password berhasil direset"}
 
 @api_router.post("/tickets", response_model=Ticket)
 async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(get_current_user)):
@@ -460,13 +460,13 @@ async def update_ticket(
 ):
     ticket = await db.tickets.find_one({"id": ticket_id})
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
     
     # Check for conflict if assigning agent
     if update_data.assigned_agent and ticket.get('assigned_agent') and ticket.get('assigned_agent') != update_data.assigned_agent:
         # If ticket is already assigned to someone else
         agent_name = ticket.get('assigned_agent_name', 'another agent')
-        raise HTTPException(status_code=409, detail=f"Ticket already assigned to {agent_name}")
+        raise HTTPException(status_code=409, detail=f"Tiket sudah diambil oleh {agent_name}")
         
     update_dict = update_data.model_dump(exclude_unset=True)
     update_dict['updated_at'] = datetime.now(timezone.utc)
@@ -497,7 +497,7 @@ async def update_ticket(
     )
     
     if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="Ticket update failed")
+        raise HTTPException(status_code=400, detail="Gagal memperbarui tiket")
         
     updated_ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
     
@@ -517,7 +517,7 @@ async def update_ticket(
             # Run in background to not block response
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
         else:
-            logging.warning(f"No user_telegram_id found for ticket {ticket_id}, skipping notification")
+            logging.warning(f"User Telegram ID tidak ditemukan untuk tiket {ticket_id}, skipping notification")
             
     # Send Telegram Notification if completed
     if is_completed:
@@ -530,7 +530,6 @@ async def update_ticket(
             message = (
                 f"Halo *{user_name}*,\n\n"
                 f"Tiket Anda *{ticket_number}* telah *SELESAI* dikerjakan oleh *{agent_name}*.\n"
-                f"Terima kasih telah menggunakan layanan kami! ✅"
             )
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
     
@@ -546,11 +545,11 @@ async def update_ticket(
 @api_router.delete("/tickets/{ticket_id}")
 async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
         
     result = await db.tickets.delete_one({"id": ticket_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
         
     # Invalidate cache
     await redis_client.delete("dashboard:admin:stats:v2")
@@ -567,7 +566,7 @@ async def add_comment(
     # Check if ticket exists
     ticket = await db.tickets.find_one({"id": ticket_id})
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
     
     # Create comment with sent_to_telegram=False (bot will pick this up)
     # Use full_name if available, otherwise username
@@ -605,12 +604,12 @@ async def add_bot_comment(
     """Endpoint for Bot to add comment on behalf of Telegram User"""
     # Bot must be admin/agent to use this
     if current_user.role not in ["admin", "agent"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Hak akses admin/agent diperlukan")
     
     # Find ticket by ticket_number
     ticket = await db.tickets.find_one({"ticket_number": comment_data.ticket_number})
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
     
     # Create comment
     comment = Comment(
@@ -675,9 +674,9 @@ async def mark_comment_as_sent(comment_id: str):
     )
     
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Comment not found")
+        raise HTTPException(status_code=404, detail="Komentar tidak ditemukan")
     
-    return {"message": "Comment marked as sent to Telegram"}
+    return {"message": "Komentar berhasil disimpan"}
 
 # ============= Statistics Routes =============
 
@@ -685,7 +684,7 @@ async def mark_comment_as_sent(comment_id: str):
 @api_router.get("/statistics/admin-dashboard")
 async def get_admin_dashboard(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     # Try to get from cache first
     cache_key = "dashboard:admin:stats:v2"
@@ -776,7 +775,7 @@ async def get_admin_dashboard(current_user: User = Depends(get_current_user)):
 async def get_agent_dashboard(agent_id: str, current_user: User = Depends(get_current_user)):
     # Agents can only see their own dashboard
     if current_user.role == "agent" and current_user.id != agent_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Hak akses admin/agent diperlukan")
     
     # Try cache
     cache_key = f"dashboard:agent:{agent_id}:stats:v2"
@@ -847,7 +846,7 @@ async def get_agent_dashboard(agent_id: str, current_user: User = Depends(get_cu
 @api_router.get("/statistics/dashboard", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     # Get all tickets
     all_tickets = await db.tickets.find({}, {"_id": 0}).to_list(10000)
@@ -923,7 +922,7 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
 async def get_agent_stats(agent_id: str, current_user: User = Depends(get_current_user)):
     # Agents can only see their own stats
     if current_user.role == "agent" and current_user.id != agent_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Hak akses admin/agent diperlukan")
     
     # Get agent tickets
     tickets = await db.tickets.find({"assigned_agent": agent_id}, {"_id": 0}).to_list(10000)
@@ -962,7 +961,7 @@ async def export_tickets(
 ):
     """Export tickets to CSV or XLSX"""
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     tickets = await db.tickets.find({}, {"_id": 0}).to_list(10000)
     

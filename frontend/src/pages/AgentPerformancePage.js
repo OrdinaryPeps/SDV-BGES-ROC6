@@ -39,7 +39,7 @@ export default function AgentPerformancePage({ user }) {
     <div className="space-y-6" data-testid="performance-page">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">My Performance</h1>
-        <p className="text-slate-500 mt-1">Track your ticket completion statistics</p>
+        <p className="text-slate-500 mt-1">Pantau statistik penyelesaian tiket Anda</p>
       </div>
 
       {/* Performance Cards */}
