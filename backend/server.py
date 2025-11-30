@@ -456,6 +456,10 @@ async def receive_telegram_ticket(ticket_data: TicketCreate):
         ticket_dict['completed_at'] = ticket_dict['completed_at'].isoformat()
     
     await db.tickets.insert_one(ticket_dict)
+    
+    # Invalidate admin dashboard cache so it updates immediately
+    await redis_client.delete("dashboard:admin:stats")
+    
     return ticket
 
 @api_router.get("/tickets", response_model=List[Ticket])
@@ -601,6 +605,11 @@ async def update_ticket(
     if ticket.get('completed_at') and isinstance(ticket['completed_at'], str):
         ticket['completed_at'] = datetime.fromisoformat(ticket['completed_at'])
     
+    # Invalidate caches
+    await redis_client.delete("dashboard:admin:stats")
+    if ticket.get('assigned_agent'):
+        await redis_client.delete(f"dashboard:agent:{ticket.get('assigned_agent')}:stats")
+    
     return Ticket(**ticket)
 
 @api_router.delete("/tickets/{ticket_id}")
@@ -614,6 +623,9 @@ async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current
     
     # Also delete related comments
     await db.comments.delete_many({"ticket_id": ticket_id})
+    
+    # Invalidate admin dashboard cache
+    await redis_client.delete("dashboard:admin:stats")
     
     return {"message": "Ticket deleted successfully"}
 
