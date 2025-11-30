@@ -984,8 +984,8 @@ async def get_performance_table_data(
                 end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
         
         query['created_at'] = {
-            '$gte': start_date.isoformat(),
-            '$lt': end_date.isoformat()
+            '$gte': start_date,
+            '$lt': end_date
         }
     
     if category:
@@ -1104,16 +1104,16 @@ async def get_performance_by_agent(
     match_stage = {"assigned_agent": {"$ne": None}}
     
     if year:
-        start_date = datetime(year, 1, 1)
-        end_date = datetime(year + 1, 1, 1)
+        start_date = datetime(year, 1, 1, tzinfo=timezone.utc)
+        end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
         match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
         
     if month and year:
-        start_date = datetime(year, month, 1)
+        start_date = datetime(year, month, 1, tzinfo=timezone.utc)
         if month == 12:
-            end_date = datetime(year + 1, 1, 1)
+            end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
         else:
-            end_date = datetime(year, month + 1, 1)
+            end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
         match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
         
     if category and category != 'all':
@@ -1175,6 +1175,98 @@ async def get_performance_by_agent(
         "grand_total": grand_total
     }
 
+@api_router.get("/performance/by-product")
+async def get_performance_by_product(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    agent_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get performance report grouped by product/category and permintaan type"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Build query for filtering tickets
+    query = {}
+    
+    # Year and Month filter
+    if year or month:
+        if year and not month:
+            start_date = datetime(year, 1, 1, tzinfo=timezone.utc)
+            end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+        elif month and not year:
+            current_year = datetime.now(timezone.utc).year
+            start_date = datetime(current_year, month, 1, tzinfo=timezone.utc)
+            if month == 12:
+                end_date = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                end_date = datetime(current_year, month + 1, 1, tzinfo=timezone.utc)
+        else:
+            start_date = datetime(year, month, 1, tzinfo=timezone.utc)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+        
+        query['created_at'] = {
+            '$gte': start_date,
+            '$lt': end_date
+        }
+    
+    if agent_id:
+        query['assigned_agent'] = agent_id
+
+    pipeline = [
+        {"$match": query},
+        {"$group": {
+            "_id": {
+                "product": "$category",
+                "type": "$permintaan"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$group": {
+            "_id": "$_id.product",
+            "types": {
+                "$push": {
+                    "k": {"$ifNull": ["$_id.type", "Unknown"]},
+                    "v": "$count"
+                }
+            }
+        }},
+        {"$project": {
+            "product": "$_id",
+            "counts": {"$arrayToObject": "$types"},
+            "_id": 0
+        }},
+        {"$sort": {"product": 1}}
+    ]
+    
+    results = await db.tickets.aggregate(pipeline).to_list(None)
+    
+    data = []
+    grand_total = {
+        "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
+        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+    }
+    
+    for item in results:
+        row = {"product": item['product']}
+        counts = item.get('counts', {})
+        
+        for key in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
+            val = counts.get(key, 0)
+            row[key] = val
+            grand_total[key] += val
+            grand_total["total"] += val
+            
+        data.append(row)
+        
+    return {
+        "data": data,
+        "grand_total": grand_total
+    }
+
 @api_router.get("/export/performance")
 async def export_performance_report(
     year: Optional[int] = None,
@@ -1217,8 +1309,8 @@ async def export_performance_report(
                 end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
         
         query['created_at'] = {
-            '$gte': start_date.isoformat(),
-            '$lt': end_date.isoformat()
+            '$gte': start_date,
+            '$lt': end_date
         }
     
     if category:
