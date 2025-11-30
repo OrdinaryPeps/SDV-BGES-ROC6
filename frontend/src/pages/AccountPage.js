@@ -18,7 +18,7 @@ export default function AccountPage({ user }) {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
@@ -35,7 +35,7 @@ export default function AccountPage({ user }) {
         current_password: passwordData.currentPassword,
         new_password: passwordData.newPassword
       });
-      
+
       toast.success('Password changed successfully!');
       setPasswordData({
         currentPassword: '',
@@ -79,8 +79,8 @@ export default function AccountPage({ user }) {
                 </p>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
               <div>
                 <Label className="text-sm text-slate-500">Username</Label>
                 <p className="text-slate-900 font-medium mt-1">{user.username}</p>

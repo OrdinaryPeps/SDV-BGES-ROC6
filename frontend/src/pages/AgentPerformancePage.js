@@ -115,7 +115,7 @@ export default function AgentPerformancePage({ user }) {
           <CardTitle>Performance Overview</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl">
               {user.username.substring(0, 2).toUpperCase()}
             </div>
@@ -123,7 +123,7 @@ export default function AgentPerformancePage({ user }) {
               <h3 className="text-2xl font-bold text-slate-900">{user.username}</h3>
               <p className="text-slate-500">Agent Performance</p>
             </div>
-            <div className="text-right">
+            <div className="text-center md:text-right w-full md:w-auto mt-4 md:mt-0">
               <div className="text-4xl font-bold text-blue-600">{stats.rating.toFixed(1)}</div>
               <p className="text-sm text-slate-500">Rating</p>
             </div>
@@ -140,7 +140,7 @@ export default function AgentPerformancePage({ user }) {
               <Progress value={completionRate} className="h-3" />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
               <div className="p-4 bg-slate-50 rounded-lg">
                 <p className="text-sm text-slate-500 mb-1">Total Assigned</p>
                 <p className="text-2xl font-bold text-slate-900">{stats.total_tickets}</p>

@@ -131,16 +131,16 @@ export default function UserManagementPage({ user }) {
             {pendingUsers.map((pendingUser) => (
               <Card key={pendingUser.id} data-testid={`pending-user-${pendingUser.username}`}>
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                         {pendingUser.username.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">
                           {pendingUser.username}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline" className="capitalize">
                             {pendingUser.role}
                           </Badge>
@@ -153,7 +153,7 @@ export default function UserManagementPage({ user }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
                       <Button
                         onClick={() => handleApprove(pendingUser.id)}
                         className="gap-2 bg-green-600 hover:bg-green-700"
@@ -197,16 +197,16 @@ export default function UserManagementPage({ user }) {
             {agents.map((agent) => (
               <Card key={agent.id} data-testid={`agent-${agent.username}`}>
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                         {agent.username.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900">
                           {agent.username}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <Badge variant="outline" className="capitalize">
                             {agent.role}
                           </Badge>
@@ -219,7 +219,7 @@ export default function UserManagementPage({ user }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
                       <Dialog open={resetPasswordDialog === agent.id} onOpenChange={(open) => {
                         if (!open) {
                           setResetPasswordDialog(null);

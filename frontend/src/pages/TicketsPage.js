@@ -105,7 +105,7 @@ export default function TicketsPage({ user }) {
               {openTickets.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="flex items-center justify-between bg-white p-4 rounded-lg border border-blue-200"
+                  className="flex flex-col md:flex-row md:items-center justify-between bg-white p-4 rounded-lg border border-blue-200 gap-4"
                   data-testid={`available-ticket-${ticket.ticket_number}`}
                 >
                   <div className="flex-1">
@@ -113,7 +113,7 @@ export default function TicketsPage({ user }) {
                       <h4 className="font-semibold text-slate-900">{ticket.ticket_number}</h4>
                     </div>
                     <p className="text-sm text-slate-600 line-clamp-2">{ticket.description}</p>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-2">
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
                         <Tag className="w-3 h-3" />
                         {ticket.category}
@@ -129,7 +129,7 @@ export default function TicketsPage({ user }) {
                   </div>
                   <Button
                     onClick={() => handleClaimTicket(ticket.id)}
-                    className="ml-4"
+                    className="w-full md:w-auto"
                     data-testid={`claim-ticket-${ticket.ticket_number}`}
                   >
                     Claim Ticket
@@ -142,16 +142,16 @@ export default function TicketsPage({ user }) {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="all" data-testid="tab-all">
+        <TabsList className="flex flex-wrap h-auto p-1 gap-1">
+          <TabsTrigger value="all" data-testid="tab-all" className="flex-1">
             {user.role === 'agent' ? 'My Tickets' : 'All'}
           </TabsTrigger>
           {user.role !== 'agent' && (
-            <TabsTrigger value="open" data-testid="tab-open">Open</TabsTrigger>
+            <TabsTrigger value="open" data-testid="tab-open" className="flex-1">Open</TabsTrigger>
           )}
-          <TabsTrigger value="pending" data-testid="tab-pending">Pending</TabsTrigger>
-          <TabsTrigger value="in_progress" data-testid="tab-in-progress">In Progress</TabsTrigger>
-          <TabsTrigger value="completed" data-testid="tab-completed">Completed</TabsTrigger>
+          <TabsTrigger value="pending" data-testid="tab-pending" className="flex-1">Pending</TabsTrigger>
+          <TabsTrigger value="in_progress" data-testid="tab-in-progress" className="flex-1">In Progress</TabsTrigger>
+          <TabsTrigger value="completed" data-testid="tab-completed" className="flex-1">Completed</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">

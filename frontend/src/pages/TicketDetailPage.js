@@ -182,7 +182,7 @@ export default function TicketDetailPage({ user }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label className="text-sm text-slate-500">Category</Label>
               <p className="text-slate-900 font-medium mt-1">
@@ -228,7 +228,7 @@ export default function TicketDetailPage({ user }) {
           </div>
 
           {user.role === 'admin' && (
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
               <div>
                 <Label>Update Status</Label>
                 <Select value={ticket.status} onValueChange={handleStatusUpdate}>
