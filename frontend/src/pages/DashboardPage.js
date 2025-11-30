@@ -672,7 +672,7 @@ export default function DashboardPage({ user }) {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Performance Report</CardTitle>
-            <p className="text-sm text-slate-500">Filter and export agent performance data</p>
+            <p className="text-sm text-slate-500">Filter dan ekspor data performa agen</p>
           </CardHeader>
           <CardContent className="overflow-hidden">
             <div className="space-y-4">
@@ -834,7 +834,7 @@ export default function DashboardPage({ user }) {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Performance by Agent (HD ROC)</CardTitle>
-            <p className="text-sm text-slate-500">Request count by agent and type</p>
+            <p className="text-sm text-slate-500">Jumlah permintaan berdasarkan agen dan tipe</p>
           </CardHeader>
           <CardContent className="overflow-hidden">
             {loadingByAgent ? (
@@ -889,7 +889,7 @@ export default function DashboardPage({ user }) {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Performance by Product</CardTitle>
-            <p className="text-sm text-slate-500">Request count by product/category and type</p>
+            <p className="text-sm text-slate-500">Jumlah permintaan berdasarkan produk/kategori dan tipe</p>
           </CardHeader>
           <CardContent className="overflow-hidden">
             {loadingByProduct ? (
