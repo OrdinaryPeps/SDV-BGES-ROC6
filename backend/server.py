@@ -1078,7 +1078,170 @@ async def get_ticket_categories(current_user: User = Depends(get_current_user)):
         return {"categories": [c for c in categories if c]}
     except Exception as e:
         print(f"Error fetching categories: {e}")
-        return {"categories": []}
+@api_router.get("/performance/table-data")
+async def get_performance_table_data(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    category: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    match_stage = {}
+    
+    if year:
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year + 1, 1, 1)
+        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
+        
+    if month and year:
+        start_date = datetime(year, month, 1)
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1)
+        else:
+            end_date = datetime(year, month + 1, 1)
+        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
+        
+    if category and category != 'all':
+        match_stage["category"] = category
+        
+    if agent_id and agent_id != 'all':
+        match_stage["assigned_agent"] = agent_id
+
+    # Pipeline for Product/Category Performance
+    pipeline = [
+        {"$match": match_stage},
+        {"$group": {
+            "_id": {
+                "product": "$category",
+                "type": "$permintaan"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$group": {
+            "_id": "$_id.product",
+            "types": {
+                "$push": {
+                    "k": {"$ifNull": ["$_id.type", "Unknown"]},
+                    "v": "$count"
+                }
+            }
+        }},
+        {"$project": {
+            "product": "$_id",
+            "counts": {"$arrayToObject": "$types"},
+            "_id": 0
+        }},
+        {"$sort": {"product": 1}}
+    ]
+    
+    results = await db.tickets.aggregate(pipeline).to_list(None)
+    
+    # Format data for frontend
+    data = []
+    grand_total = {
+        "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
+        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+    }
+    
+    for item in results:
+        row = {"product": item['product']}
+        counts = item.get('counts', {})
+        
+        # Add specific columns expected by frontend
+        for key in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
+            val = counts.get(key, 0)
+            row[key] = val
+            grand_total[key] += val
+            grand_total["total"] += val
+            
+        data.append(row)
+        
+    return {
+        "data": data,
+        "grand_total": grand_total,
+        "summary": {} # Legacy support if needed
+    }
+
+@api_router.get("/performance/by-agent")
+async def get_performance_by_agent(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    category: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    match_stage = {"assigned_agent": {"$ne": None}}
+    
+    if year:
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year + 1, 1, 1)
+        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
+        
+    if month and year:
+        start_date = datetime(year, month, 1)
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1)
+        else:
+            end_date = datetime(year, month + 1, 1)
+        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
+        
+    if category and category != 'all':
+        match_stage["category"] = category
+
+    pipeline = [
+        {"$match": match_stage},
+        {"$group": {
+            "_id": {
+                "agent": "$assigned_agent_name",
+                "type": "$permintaan"
+            },
+            "count": {"$sum": 1}
+        }},
+        {"$group": {
+            "_id": "$_id.agent",
+            "total": {"$sum": "$count"},
+            "types": {
+                "$push": {
+                    "k": {"$ifNull": ["$_id.type", "Unknown"]},
+                    "v": "$count"
+                }
+            }
+        }},
+        {"$project": {
+            "agent": "$_id",
+            "total": 1,
+            "counts": {"$arrayToObject": "$types"},
+            "_id": 0
+        }},
+        {"$sort": {"total": -1}}
+    ]
+    
+    results = await db.tickets.aggregate(pipeline).to_list(None)
+    
+    data = []
+    grand_total = {
+        "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
+        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+    }
+    
+    for item in results:
+        row = {
+            "agent": item['agent'] or "Unknown", 
+            "total": item['total']
+        }
+        counts = item.get('counts', {})
+        
+        for key in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
+            val = counts.get(key, 0)
+            row[key] = val
+            grand_total[key] += val
+            
+        grand_total["total"] += item['total']
+        data.append(row)
+        
+    return {
+        "data": data,
+        "grand_total": grand_total
+    }
 
 @api_router.get("/export/performance")
 async def export_performance_report(
