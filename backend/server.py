@@ -596,16 +596,22 @@ async def get_admin_dashboard(current_user: User = Depends(get_current_user)):
     today_tickets = []
     for t in all_tickets:
         dt = parse_datetime(t.get('created_at'))
-        if dt and dt.date() == today:
-            today_tickets.append(t)
+        if dt:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if dt.date() == today:
+                today_tickets.append(t)
     
     # This month
     this_month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_tickets = []
     for t in all_tickets:
         dt = parse_datetime(t.get('created_at'))
-        if dt and dt >= this_month_start:
-            month_tickets.append(t)
+        if dt:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if dt >= this_month_start:
+                month_tickets.append(t)
     
     # Calculate stats
     # Note: "open" shows ALL currently open tickets in the system, not just today's
@@ -1686,6 +1692,23 @@ class TelegramWebhookRequest(BaseModel):
     task_bima: Optional[str] = None
     ownergroup: Optional[str] = None
     keterangan_lainnya: Optional[str] = None
+
+@api_router.get("/tickets/years")
+async def get_ticket_years(current_user: User = Depends(get_current_user)):
+    """Get available years for filter"""
+    pipeline = [
+        {"$project": {"year": {"$year": "$created_at"}}},
+        {"$group": {"_id": "$year"}},
+        {"$sort": {"_id": -1}}
+    ]
+    years = await db.tickets.aggregate(pipeline).to_list(None)
+    return {"years": [y["_id"] for y in years if y["_id"] is not None]}
+
+@api_router.get("/tickets/categories")
+async def get_ticket_categories(current_user: User = Depends(get_current_user)):
+    """Get available categories for filter"""
+    categories = await db.tickets.distinct("category")
+    return {"categories": sorted([c for c in categories if c])}
 
 @api_router.post("/webhook/telegram", response_model=Ticket)
 async def telegram_webhook(request: TelegramWebhookRequest):
