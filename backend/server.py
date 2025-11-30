@@ -1057,6 +1057,29 @@ async def get_performance_table_data(
         'categories': all_categories
     }
 
+@api_router.get("/tickets/years")
+async def get_ticket_years(current_user: User = Depends(get_current_user)):
+    try:
+        pipeline = [
+            {"$project": {"year": {"$year": {"$toDate": "$created_at"}}}},
+            {"$group": {"_id": "$year"}},
+            {"$sort": {"_id": -1}}
+        ]
+        years = await db.tickets.aggregate(pipeline).to_list(None)
+        return {"years": [y["_id"] for y in years if y["_id"] is not None]}
+    except Exception as e:
+        print(f"Error fetching years: {e}")
+        return {"years": []}
+
+@api_router.get("/tickets/categories")
+async def get_ticket_categories(current_user: User = Depends(get_current_user)):
+    try:
+        categories = await db.tickets.distinct("category")
+        return {"categories": [c for c in categories if c]}
+    except Exception as e:
+        print(f"Error fetching categories: {e}")
+        return {"categories": []}
+
 @api_router.get("/export/performance")
 async def export_performance_report(
     year: Optional[int] = None,

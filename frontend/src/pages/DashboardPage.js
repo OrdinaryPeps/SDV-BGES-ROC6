@@ -35,7 +35,7 @@ export default function DashboardPage({ user }) {
   const [loadingByProduct, setLoadingByProduct] = useState(false);
 
   useEffect(() => {
-    console.log('DashboardPage v0.1.1 loaded');
+    console.log('DashboardPage v0.1.2 loaded');
     fetchStats();
     if (user.role === 'admin') {
       fetchAgents();
@@ -74,7 +74,7 @@ export default function DashboardPage({ user }) {
   const fetchAgents = async () => {
     try {
       const response = await axios.get(`${API}/users/agents`);
-      setAgents(response.data);
+      setAgents(response.data || []);
     } catch (error) {
       console.error('Failed to fetch agents:', error);
     }
@@ -83,7 +83,7 @@ export default function DashboardPage({ user }) {
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${API}/tickets/categories`);
-      setCategories(response.data.categories);
+      setCategories(response.data?.categories || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
@@ -92,7 +92,7 @@ export default function DashboardPage({ user }) {
   const fetchYears = async () => {
     try {
       const response = await axios.get(`${API}/tickets/years`);
-      setYears(response.data.years);
+      setYears(response.data?.years || []);
     } catch (error) {
       console.error('Failed to fetch years:', error);
     }
@@ -680,7 +680,7 @@ export default function DashboardPage({ user }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Years</SelectItem>
-                      {years.map(year => (
+                      {years?.map(year => (
                         <SelectItem key={year} value={year.toString()}>
                           {year}
                         </SelectItem>
@@ -714,7 +714,7 @@ export default function DashboardPage({ user }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {categories.map(category => (
+                      {categories?.map(category => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>
@@ -731,7 +731,7 @@ export default function DashboardPage({ user }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Agents</SelectItem>
-                      {agents.map(agent => (
+                      {agents?.map(agent => (
                         <SelectItem key={agent.id} value={agent.id}>
                           {agent.username}
                         </SelectItem>
