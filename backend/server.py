@@ -1692,10 +1692,12 @@ async def telegram_webhook(request: TelegramWebhookRequest):
     """Endpoint for Telegram Bot to create tickets (No Auth required for now)"""
     
     # Generate Ticket Number
-    # Format: T-YYYYMMDD-XXXX (Random 4 chars)
-    date_str = datetime.now().strftime("%Y%m%d")
-    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    ticket_number = f"T-{date_str}-{random_str}"
+    # Format: INC${MM}${DD}${YYYY}${HH}${mm}${ss}${randomText}
+    # Example: INC111520251928405B6
+    now = datetime.now()
+    date_str = now.strftime("%m%d%Y%H%M%S")
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+    ticket_number = f"INC{date_str}{random_str}"
     
     # Create Ticket object
     ticket_dict = request.model_dump()
