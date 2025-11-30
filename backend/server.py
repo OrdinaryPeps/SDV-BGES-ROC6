@@ -436,7 +436,8 @@ async def update_ticket(
     # Check for conflict if assigning agent
     if update_data.assigned_agent and ticket.get('assigned_agent') and ticket.get('assigned_agent') != update_data.assigned_agent:
         # If ticket is already assigned to someone else
-        raise HTTPException(status_code=409, detail="Ticket already assigned to another agent")
+        agent_name = ticket.get('assigned_agent_name', 'another agent')
+        raise HTTPException(status_code=409, detail=f"Ticket already assigned to {agent_name}")
         
     update_dict = update_data.model_dump(exclude_unset=True)
     update_dict['updated_at'] = datetime.now(timezone.utc)
