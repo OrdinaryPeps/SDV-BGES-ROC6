@@ -940,80 +940,141 @@ async def get_performance_table_data(
     agent_id: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    match_stage = {}
+    """Get performance table data with category breakdown and duration analysis"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
     
-    if year:
-        start_date = datetime(year, 1, 1)
-        end_date = datetime(year + 1, 1, 1)
-        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
-        
-    if month and year:
-        start_date = datetime(year, month, 1)
-        if month == 12:
-            end_date = datetime(year + 1, 1, 1)
+    # Build query for filtering tickets
+    query = {}
+    
+    # Year and Month filter
+    if year or month:
+        if year and not month:
+            start_date = datetime(year, 1, 1, tzinfo=timezone.utc)
+            end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+        elif month and not year:
+            current_year = datetime.now(timezone.utc).year
+            start_date = datetime(current_year, month, 1, tzinfo=timezone.utc)
+            if month == 12:
+                end_date = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                end_date = datetime(current_year, month + 1, 1, tzinfo=timezone.utc)
         else:
-            end_date = datetime(year, month + 1, 1)
-        match_stage["created_at"] = {"$gte": start_date, "$lt": end_date}
+            start_date = datetime(year, month, 1, tzinfo=timezone.utc)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
         
-    if category and category != 'all':
-        match_stage["category"] = category
+        query['created_at'] = {
+            '$gte': start_date.isoformat(),
+            '$lt': end_date.isoformat()
+        }
+    
+    if category:
+        query['category'] = category
+    
+    if agent_id:
+        query['assigned_agent'] = agent_id
+    
+    # Get all tickets matching filters
+    tickets = await db.tickets.find(query, {"_id": 0}).to_list(10000)
+    
+    # Get all categories
+    all_categories = await db.tickets.distinct("category")
+    all_categories.sort()
+    
+    # Get agents (filter by those who have tickets if category filter is applied)
+    if category:
+        # Only get agents who handled this category
+        agent_ids = set(t.get('assigned_agent') for t in tickets if t.get('assigned_agent'))
+        agents = await db.users.find({"id": {"$in": list(agent_ids)}, "role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
+    else:
+        agents = await db.users.find({"role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
+    
+    # Calculate performance data for each agent
+    performance_data = []
+    
+    for agent in agents:
+        agent_tickets = [t for t in tickets if t.get('assigned_agent') == agent['id']]
         
-    if agent_id and agent_id != 'all':
-        match_stage["assigned_agent"] = agent_id
-
-    # Pipeline for Product/Category Performance
-    pipeline = [
-        {"$match": match_stage},
-        {"$group": {
-            "_id": {
-                "product": "$category",
-                "type": "$permintaan"
-            },
-            "count": {"$sum": 1}
-        }},
-        {"$group": {
-            "_id": "$_id.product",
-            "types": {
-                "$push": {
-                    "k": {"$ifNull": ["$_id.type", "Unknown"]},
-                    "v": "$count"
-                }
-            }
-        }},
-        {"$project": {
-            "product": "$_id",
-            "counts": {"$arrayToObject": "$types"},
-            "_id": 0
-        }},
-        {"$sort": {"product": 1}}
-    ]
+        if not agent_tickets:
+            continue
+        
+        completed = [t for t in agent_tickets if t['status'] == 'completed']
+        
+        # Duration breakdown
+        under_1hr = 0
+        between_2_3hr = 0
+        over_3hr = 0
+        
+        for t in completed:
+            if t.get('completed_at'):
+                created = parse_datetime(t.get('created_at'))
+                completed_time = parse_datetime(t.get('completed_at'))
+                
+                if created and completed_time:
+                    if created.tzinfo is None: created = created.replace(tzinfo=timezone.utc)
+                    if completed_time.tzinfo is None: completed_time = completed_time.replace(tzinfo=timezone.utc)
+                    
+                    hours = (completed_time - created).total_seconds() / 3600
+                    
+                    if hours < 1:
+                        under_1hr += 1
+                    elif 2 <= hours <= 3:
+                        between_2_3hr += 1
+                    elif hours > 3:
+                        over_3hr += 1
+        
+        # Category breakdown
+        category_counts = {}
+        for cat in all_categories:
+            category_counts[cat] = sum(1 for t in agent_tickets if t.get('category') == cat)
+        
+        # Build agent row
+        agent_row = {
+            'agent': agent['username'],
+            'agent_id': agent['id'],
+            'total': len(agent_tickets),
+            'completed': len(completed),
+            'in_progress': sum(1 for t in agent_tickets if t['status'] == 'in_progress'),
+            'pending': sum(1 for t in agent_tickets if t['status'] == 'pending'),
+            'completion_rate': round((len(completed) / len(agent_tickets) * 100) if agent_tickets else 0, 2),
+            'under_1hr': under_1hr,
+            'between_2_3hr': between_2_3hr,
+            'over_3hr': over_3hr,
+            'categories': category_counts
+        }
+        
+        performance_data.append(agent_row)
     
-    results = await db.tickets.aggregate(pipeline).to_list(None)
-    
-    # Format data for frontend
-    data = []
-    grand_total = {
-        "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
-        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+    # Calculate summary row
+    summary = {
+        'agent': 'SUMMARY',
+        'agent_id': None,
+        'total': sum(row['total'] for row in performance_data),
+        'completed': sum(row['completed'] for row in performance_data),
+        'in_progress': sum(row['in_progress'] for row in performance_data),
+        'pending': sum(row['pending'] for row in performance_data),
+        'completion_rate': 0,
+        'under_1hr': sum(row['under_1hr'] for row in performance_data),
+        'between_2_3hr': sum(row['between_2_3hr'] for row in performance_data),
+        'over_3hr': sum(row['over_3hr'] for row in performance_data),
+        'categories': {}
     }
     
-    for item in results:
-        row = {"product": item['product']}
-        counts = item.get('counts', {})
-        
-        # Add specific columns expected by frontend
-        for key in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
-            val = counts.get(key, 0)
-            row[key] = val
-            grand_total[key] += val
-            grand_total["total"] += val
-            
-        data.append(row)
-        
+    # Calculate summary completion rate
+    if summary['total'] > 0:
+        summary['completion_rate'] = round((summary['completed'] / summary['total'] * 100), 2)
+    
+    # Calculate summary category counts
+    for cat in all_categories:
+        summary['categories'][cat] = sum(row['categories'].get(cat, 0) for row in performance_data)
+    
     return {
-        "data": data,
-        "grand_total": grand_total,
-        "summary": {} # Legacy support if needed
+        'data': performance_data,
+        'summary': summary,
+        'categories': all_categories
     }
 
 @api_router.get("/performance/by-agent")
