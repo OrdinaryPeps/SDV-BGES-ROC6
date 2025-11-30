@@ -1660,6 +1660,60 @@ async def get_performance_by_product(
         "grand_total": grand_total
     }
 
+class TelegramWebhookRequest(BaseModel):
+    user_telegram_id: str
+    user_telegram_name: str
+    category: str
+    description: str
+    permintaan: Optional[str] = None
+    tipe_transaksi: Optional[str] = None
+    order_number: Optional[str] = None
+    wonum: Optional[str] = None
+    tiket_fo: Optional[str] = None
+    nd_internet_voice: Optional[str] = None
+    password: Optional[str] = None
+    paket_inet: Optional[str] = None
+    sn_lama: Optional[str] = None
+    sn_baru: Optional[str] = None
+    sn_ap: Optional[str] = None
+    mac_ap: Optional[str] = None
+    ssid: Optional[str] = None
+    tipe_ont: Optional[str] = None
+    gpon_slot_port: Optional[str] = None
+    vlan: Optional[str] = None
+    svlan: Optional[str] = None
+    cvlan: Optional[str] = None
+    task_bima: Optional[str] = None
+    ownergroup: Optional[str] = None
+    keterangan_lainnya: Optional[str] = None
+
+@api_router.post("/webhook/telegram", response_model=Ticket)
+async def telegram_webhook(request: TelegramWebhookRequest):
+    """Endpoint for Telegram Bot to create tickets (No Auth required for now)"""
+    
+    # Generate Ticket Number
+    # Format: T-YYYYMMDD-XXXX (Random 4 chars)
+    date_str = datetime.now().strftime("%Y%m%d")
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    ticket_number = f"T-{date_str}-{random_str}"
+    
+    # Create Ticket object
+    ticket_dict = request.model_dump()
+    ticket_dict['ticket_number'] = ticket_number
+    ticket_dict['status'] = 'open'
+    ticket_dict['created_at'] = datetime.now(timezone.utc)
+    ticket_dict['id'] = str(uuid.uuid4())
+    ticket_dict['assigned_agent'] = None
+    
+    # Insert into DB
+    await db.tickets.insert_one(ticket_dict)
+    
+    # Invalidate cache
+    await redis_client.delete("dashboard:admin:stats:v2")
+    
+    # Return as Ticket model
+    return Ticket(**ticket_dict)
+
 # Include the router in the main app
 app.include_router(api_router)
 
