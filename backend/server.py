@@ -887,29 +887,14 @@ async def export_tickets(
     export_data = []
     for ticket in tickets:
         # Format dates
-        created_at = ticket.get('created_at', '')
-        if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at)
-            created_at_str = created_at.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            created_at_str = ''
+        created_at = parse_datetime(ticket.get('created_at'))
+        created_at_str = created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else ''
         
-        updated_at = ticket.get('updated_at', '')
-        if updated_at:
-            if isinstance(updated_at, str):
-                updated_at = datetime.fromisoformat(updated_at)
-            updated_at_str = updated_at.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            updated_at_str = ''
+        updated_at = parse_datetime(ticket.get('updated_at'))
+        updated_at_str = updated_at.strftime('%Y-%m-%d %H:%M:%S') if updated_at else ''
         
-        completed_at = ticket.get('completed_at', '')
-        if completed_at:
-            if isinstance(completed_at, str):
-                completed_at = datetime.fromisoformat(completed_at)
-            completed_at_str = completed_at.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            completed_at_str = ''
+        completed_at = parse_datetime(ticket.get('completed_at'))
+        completed_at_str = completed_at.strftime('%Y-%m-%d %H:%M:%S') if completed_at else ''
         
         export_data.append({
             'Ticket Number': ticket.get('ticket_number', ''),
@@ -1331,34 +1316,30 @@ async def export_performance_report(
         duration_category = ""
         
         if ticket['status'] == 'completed' and ticket.get('completed_at'):
-            created = datetime.fromisoformat(ticket['created_at'] if isinstance(ticket['created_at'], str) else ticket['created_at'].isoformat())
-            completed_time = datetime.fromisoformat(ticket['completed_at'] if isinstance(ticket['completed_at'], str) else ticket['completed_at'].isoformat())
-            duration_hours = round((completed_time - created).total_seconds() / 3600, 2)
+            created = parse_datetime(ticket.get('created_at'))
+            completed_time = parse_datetime(ticket.get('completed_at'))
             
-            # Categorize duration
-            if duration_hours < 1:
-                duration_category = "< 1 hour"
-            elif 2 <= duration_hours <= 3:
-                duration_category = "2-3 hours"
-            elif duration_hours > 3:
-                duration_category = "> 3 hours"
+            if created and completed_time:
+                # Ensure timezone awareness for subtraction
+                if created.tzinfo is None: created = created.replace(tzinfo=timezone.utc)
+                if completed_time.tzinfo is None: completed_time = completed_time.replace(tzinfo=timezone.utc)
+                
+                duration_hours = round((completed_time - created).total_seconds() / 3600, 2)
+                
+                # Categorize duration
+                if duration_hours < 1:
+                    duration_category = "< 1 hour"
+                elif 2 <= duration_hours <= 3:
+                    duration_category = "2-3 hours"
+                elif duration_hours > 3:
+                    duration_category = "> 3 hours"
         
         # Format dates for export
-        created_at = ticket.get('created_at', '')
-        if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at)
-            created_at_str = created_at.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            created_at_str = ''
+        created_at = parse_datetime(ticket.get('created_at'))
+        created_at_str = created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else ''
         
-        completed_at = ticket.get('completed_at', '')
-        if completed_at:
-            if isinstance(completed_at, str):
-                completed_at = datetime.fromisoformat(completed_at)
-            completed_at_str = completed_at.strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            completed_at_str = ''
+        completed_at = parse_datetime(ticket.get('completed_at'))
+        completed_at_str = completed_at.strftime('%Y-%m-%d %H:%M:%S') if completed_at else ''
         
         # Get comments for this ticket
         comments = await db.comments.find({"ticket_id": ticket['id']}, {"_id": 0}).to_list(100)
@@ -1372,8 +1353,6 @@ async def export_performance_report(
         # Get period (month/year)
         period = ''
         if created_at:
-            if isinstance(created_at, str):
-                created_at = datetime.fromisoformat(created_at)
             period = created_at.strftime('%B %Y')
         
         export_data.append({
