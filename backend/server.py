@@ -47,17 +47,26 @@ import httpx
 
 async def send_telegram_message(chat_id: str, text: str):
     """Send message to Telegram user"""
-    if not BOT_TOKEN or not chat_id:
+    if not BOT_TOKEN:
+        logging.error("BOT_TOKEN is missing")
+        return
+    if not chat_id:
+        logging.error("chat_id is missing")
         return
     
     try:
+        logging.info(f"Sending Telegram message to {chat_id}...")
         async with httpx.AsyncClient() as client:
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-            await client.post(url, json={
+            response = await client.post(url, json={
                 "chat_id": chat_id,
                 "text": text,
                 "parse_mode": "Markdown"
             })
+            if response.status_code != 200:
+                logging.error(f"Telegram API Error: {response.text}")
+            else:
+                logging.info("Telegram message sent successfully")
     except Exception as e:
         logging.error(f"Failed to send Telegram message: {e}")
 
@@ -487,18 +496,22 @@ async def update_ticket(
     updated_ticket = await db.tickets.find_one({"id": ticket_id}, {"_id": 0})
     
     # Send Telegram Notification if assigned
-    if is_new_assignment and updated_ticket.get('user_telegram_id'):
-        agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
-        ticket_number = updated_ticket.get('ticket_number', 'Unknown')
-        user_name = updated_ticket.get('user_telegram_name', 'User')
-        
-        message = (
-            f"Halo *{user_name}*,\n\n"
-            f"Tiket Anda *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
-            f"Mohon tunggu, kami sedang memprosesnya. 👨‍💻"
-        )
-        # Run in background to not block response
-        asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
+    if is_new_assignment:
+        logging.info(f"New assignment detected for ticket {ticket_id}. User ID: {updated_ticket.get('user_telegram_id')}")
+        if updated_ticket.get('user_telegram_id'):
+            agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
+            ticket_number = updated_ticket.get('ticket_number', 'Unknown')
+            user_name = updated_ticket.get('user_telegram_name', 'User')
+            
+            message = (
+                f"Halo *{user_name}*,\n\n"
+                f"Tiket Anda *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
+                f"Mohon tunggu, kami sedang memprosesnya. 👨‍💻"
+            )
+            # Run in background to not block response
+            asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
+        else:
+            logging.warning(f"No user_telegram_id found for ticket {ticket_id}, skipping notification")
     
     # Invalidate cache
     await redis_client.delete("dashboard:admin:stats:v2")
