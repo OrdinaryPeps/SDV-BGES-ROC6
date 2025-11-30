@@ -479,7 +479,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Tickets Received</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today.received}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today?.received || 0}</p>
                 </div>
                 <div className="bg-blue-100 p-4 rounded-xl">
                   <Ticket className="w-8 h-8 text-blue-600" />
@@ -493,7 +493,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Completed Today</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today.completed}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today?.completed || 0}</p>
                 </div>
                 <div className="bg-green-100 p-4 rounded-xl">
                   <CheckCircle className="w-8 h-8 text-green-600" />
@@ -507,7 +507,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">In Progress</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today.in_progress}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today?.in_progress || 0}</p>
                 </div>
                 <div className="bg-yellow-100 p-4 rounded-xl">
                   <Clock className="w-8 h-8 text-yellow-600" />
@@ -521,7 +521,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Open</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today.open}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.today?.open || 0}</p>
                 </div>
                 <div className="bg-orange-100 p-4 rounded-xl">
                   <AlertCircle className="w-8 h-8 text-orange-600" />
@@ -541,7 +541,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Total Received</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month.received}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month?.received || 0}</p>
                 </div>
                 <div className="bg-blue-100 p-4 rounded-xl">
                   <Ticket className="w-8 h-8 text-blue-600" />
@@ -555,7 +555,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Completed</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month.completed}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month?.completed || 0}</p>
                 </div>
                 <div className="bg-green-100 p-4 rounded-xl">
                   <CheckCircle className="w-8 h-8 text-green-600" />
@@ -569,7 +569,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Avg Time (hours)</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month.avg_time.toFixed(1)}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month?.avg_time?.toFixed(1) || 0}</p>
                 </div>
                 <div className="bg-purple-100 p-4 rounded-xl">
                   <Clock className="w-8 h-8 text-purple-600" />
@@ -583,7 +583,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Active Agents</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month.active_agents}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.this_month?.active_agents || 0}</p>
                 </div>
                 <div className="bg-indigo-100 p-4 rounded-xl">
                   <TrendingUp className="w-8 h-8 text-indigo-600" />
@@ -603,7 +603,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">All Time Tickets</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total.all_tickets}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total?.all_tickets || 0}</p>
                 </div>
                 <div className="bg-slate-100 p-4 rounded-xl">
                   <Ticket className="w-8 h-8 text-slate-600" />
@@ -617,7 +617,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Total Completed</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total.completed}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total?.completed || 0}</p>
                 </div>
                 <div className="bg-green-100 p-4 rounded-xl">
                   <CheckCircle className="w-8 h-8 text-green-600" />
@@ -631,7 +631,7 @@ export default function DashboardPage({ user }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-500">Total Agents</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total.total_agents}</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total?.total_agents || 0}</p>
                 </div>
                 <div className="bg-blue-100 p-4 rounded-xl">
                   <TrendingUp className="w-8 h-8 text-blue-600" />
@@ -646,8 +646,8 @@ export default function DashboardPage({ user }) {
                 <div>
                   <p className="text-sm font-medium text-slate-500">Completion Rate</p>
                   <p className="text-3xl font-bold text-slate-900 mt-2">
-                    {stats.total.all_tickets > 0
-                      ? Math.round((stats.total.completed / stats.total.all_tickets) * 100)
+                    {stats.total?.all_tickets > 0
+                      ? Math.round((stats.total?.completed / stats.total?.all_tickets) * 100)
                       : 0}%
                   </p>
                 </div>

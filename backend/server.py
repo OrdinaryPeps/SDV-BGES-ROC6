@@ -328,7 +328,7 @@ async def create_ticket(ticket_data: TicketCreate, current_user: User = Depends(
     await db.tickets.insert_one(ticket_dict)
     
     # Invalidate cache
-    await redis_client.delete("dashboard:admin:stats")
+    await redis_client.delete("dashboard:admin:stats:v2")
     
     return ticket
 
@@ -431,11 +431,11 @@ async def update_ticket(
     await db.tickets.update_one({"id": ticket_id}, {"$set": update_dict})
     
     # Invalidate cache
-    await redis_client.delete("dashboard:admin:stats")
+    await redis_client.delete("dashboard:admin:stats:v2")
     if ticket.get('assigned_agent'):
-        await redis_client.delete(f"dashboard:agent:{ticket['assigned_agent']}:stats")
+        await redis_client.delete(f"dashboard:agent:{ticket['assigned_agent']}:stats:v2")
     if update_data.assigned_agent:
-        await redis_client.delete(f"dashboard:agent:{update_data.assigned_agent}:stats")
+        await redis_client.delete(f"dashboard:agent:{update_data.assigned_agent}:stats:v2")
         
     return {"message": "Ticket updated"}
 
@@ -449,7 +449,7 @@ async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current
         raise HTTPException(status_code=404, detail="Ticket not found")
         
     # Invalidate cache
-    await redis_client.delete("dashboard:admin:stats")
+    await redis_client.delete("dashboard:admin:stats:v2")
         
     return {"message": "Ticket deleted"}
 
@@ -584,7 +584,7 @@ async def get_admin_dashboard(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     # Try to get from cache first
-    cache_key = "dashboard:admin:stats"
+    cache_key = "dashboard:admin:stats:v2"
     cached_stats = await redis_client.get(cache_key)
     if cached_stats:
         return json.loads(cached_stats)
@@ -665,7 +665,7 @@ async def get_agent_dashboard(agent_id: str, current_user: User = Depends(get_cu
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Try cache
-    cache_key = f"dashboard:agent:{agent_id}:stats"
+    cache_key = f"dashboard:agent:{agent_id}:stats:v2"
     cached_stats = await redis_client.get(cache_key)
     if cached_stats:
         return json.loads(cached_stats)
