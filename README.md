@@ -55,16 +55,22 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 ### 🤖 Bot Integration
 - **Node.js Telegram Bot**: Fully integrated dengan FastAPI backend
 - **Comment Notifications**: Real-time notification ke user via bot
+- **Assignment Notifications**: Notifikasi otomatis ke user saat tiket diambil agent
+- **Completion Notifications**: Notifikasi otomatis ke user saat tiket selesai dikerjakan
 - **Template System**: 40+ template berbeda untuk kombinasi category + permintaan
 - **Multi-Category Support**: HSI Indibiz, WMS, BITSTREAM, VULA, ASTINET, METRO-E, dll
 
-### � 2-Way Communication (Real-time)
+### 🌐 UI & Experience
+- **Real-time Updates**: Status tiket dan komentar terupdate secara real-time
+- **Responsive Design**: Tampilan optimal di desktop dan mobile
+
+### 💬 2-Way Communication (Real-time)
 - **User to Agent**: User kirim pesan/komentar dari bot Telegram -> Masuk ke ticket comment di Dashboard
 - **Agent to User**: Agent balas komentar dari Dashboard -> User terima notifikasi real-time di Telegram
 - **History Tracking**: Semua percakapan tersimpan rapi dalam history ticket
 - **Media Support**: (Future) Support kirim gambar/file
 
-### �📋 Template Categories Support
+### 📋 Template Categories Support
 
 **HSI Indibiz:**
 - RECONFIG, REPLACE ONT, TROUBLESHOOT, INTEGRASI
@@ -96,6 +102,7 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 | **python-dateutil** | Latest | Date parsing & timezone handling |
 | **Redis** | 5.x | In-memory data structure store (Caching) |
 | **Uvicorn** | Latest | ASGI server |
+| **httpx** | Latest | Async HTTP client for Telegram API |
 
 ### Frontend
 | Teknologi | Versi | Fungsi |
@@ -1146,6 +1153,8 @@ SECRET_KEY=your-secret-key-min-32-characters-long
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 CORS_ORIGINS=http://localhost:3000,https://your-domain.com
+BOT_TOKEN=your-telegram-bot-token
+GROUP_CHAT_ID=-100xxxxxxxxxx
 ```
 
 #### 5. Test backend
