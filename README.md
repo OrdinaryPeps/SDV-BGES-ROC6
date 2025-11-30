@@ -1138,6 +1138,7 @@ pip install -r requirements.txt
 - `passlib[bcrypt]` - Password hashing
 - `pandas` - Data processing
 - `openpyxl` - Excel export support
+- `httpx` - Async HTTP client (Telegram API)
 
 #### 4. Setup environment variables
 ```bash
