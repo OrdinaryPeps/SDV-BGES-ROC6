@@ -151,7 +151,6 @@ export default function LoginPage({ onLogin }) {
         </Card>
 
         <div className="text-center mt-6 text-sm text-blue-100">
-          <p>Demo credentials: admin / admin123</p>
         </div>
       </div>
     </div>
