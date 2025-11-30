@@ -65,7 +65,7 @@ export default function LoginPage({ onLogin }) {
         <Card className="shadow-2xl border-0">
           <CardHeader>
             <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Login to your account or register as new agent</CardDescription>
+            <CardDescription>Masuk ke akun Anda atau daftar sebagai agen baru</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
