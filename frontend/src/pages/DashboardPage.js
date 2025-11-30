@@ -74,7 +74,13 @@ export default function DashboardPage({ user }) {
   const fetchAgents = async () => {
     try {
       const response = await axios.get(`${API}/users/agents`);
-      setAgents(response.data || []);
+      console.log('Agents response:', response.data);
+      if (Array.isArray(response.data)) {
+        setAgents(response.data);
+      } else {
+        console.error('Agents data is not an array:', response.data);
+        setAgents([]);
+      }
     } catch (error) {
       console.error('Failed to fetch agents:', error);
     }
@@ -731,7 +737,7 @@ export default function DashboardPage({ user }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Agents</SelectItem>
-                      {agents?.map(agent => (
+                      {Array.isArray(agents) && agents.map(agent => (
                         <SelectItem key={agent.id} value={agent.id}>
                           {agent.username}
                         </SelectItem>
