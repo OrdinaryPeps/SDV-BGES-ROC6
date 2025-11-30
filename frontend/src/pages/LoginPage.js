@@ -57,7 +57,7 @@ export default function LoginPage({ onLogin }) {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-xl mb-4">
             <Ticket className="w-10 h-10 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Fullfillment Provisioning BGES Bot Dashboard</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Fulfillment Provisioning BGES Bot Dashboard</h1>
           <p className="text-blue-100">Ticket Management System</p>
         </div>
 
