@@ -196,8 +196,12 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return User(**user)
 
 def parse_datetime(dt):
+    if dt is None:
+        return None
     if isinstance(dt, str):
-        return datetime.fromisoformat(dt)
+        dt = datetime.fromisoformat(dt)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
     return dt
 
 @api_router.post("/auth/register", response_model=User)
@@ -418,10 +422,10 @@ async def update_ticket(
         raise HTTPException(status_code=409, detail="Ticket already assigned to another agent")
         
     update_dict = update_data.model_dump(exclude_unset=True)
-    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_dict['updated_at'] = datetime.now(timezone.utc)
     
     if update_data.status == 'completed':
-        update_dict['completed_at'] = datetime.now(timezone.utc).isoformat()
+        update_dict['completed_at'] = datetime.now(timezone.utc)
         
     # If unassigning (assigned_agent is explicitly None)
     if 'assigned_agent' in update_dict and update_dict['assigned_agent'] is None:
@@ -629,6 +633,10 @@ async def get_admin_dashboard(current_user: User = Depends(get_current_user)):
         created = parse_datetime(t.get('created_at'))
         completed = parse_datetime(t.get('completed_at'))
         if created and completed:
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            if completed.tzinfo is None:
+                completed = completed.replace(tzinfo=timezone.utc)
             month_times.append((completed - created).total_seconds() / 3600)
     
     # Get active agents this month (agents with assigned tickets)
@@ -923,167 +931,7 @@ async def export_tickets(
     
     return response
 
-@api_router.get("/performance/table-data")
-async def get_performance_table_data(
-    year: Optional[int] = None,
-    month: Optional[int] = None,
-    category: Optional[str] = None,
-    agent_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
-):
-    """Get performance table data with category breakdown and duration analysis"""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    # Build query for filtering tickets
-    query = {}
-    
-    # Year and Month filter
-    if year or month:
-        if year and not month:
-            start_date = datetime(year, 1, 1, tzinfo=timezone.utc)
-            end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
-        elif month and not year:
-            current_year = datetime.now(timezone.utc).year
-            start_date = datetime(current_year, month, 1, tzinfo=timezone.utc)
-            if month == 12:
-                end_date = datetime(current_year + 1, 1, 1, tzinfo=timezone.utc)
-            else:
-                end_date = datetime(current_year, month + 1, 1, tzinfo=timezone.utc)
-        else:
-            start_date = datetime(year, month, 1, tzinfo=timezone.utc)
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
-            else:
-                end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
-        
-        query['created_at'] = {
-            '$gte': start_date.isoformat(),
-            '$lt': end_date.isoformat()
-        }
-    
-    if category:
-        query['category'] = category
-    
-    if agent_id:
-        query['assigned_agent'] = agent_id
-    
-    # Get all tickets matching filters
-    tickets = await db.tickets.find(query, {"_id": 0}).to_list(10000)
-    
-    # Get all categories
-    all_categories = await db.tickets.distinct("category")
-    all_categories.sort()
-    
-    # Get agents (filter by those who have tickets if category filter is applied)
-    if category:
-        # Only get agents who handled this category
-        agent_ids = set(t.get('assigned_agent') for t in tickets if t.get('assigned_agent'))
-        agents = await db.users.find({"id": {"$in": list(agent_ids)}, "role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
-    else:
-        agents = await db.users.find({"role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
-    
-    # Calculate performance data for each agent
-    performance_data = []
-    
-    for agent in agents:
-        agent_tickets = [t for t in tickets if t.get('assigned_agent') == agent['id']]
-        
-        if not agent_tickets:
-            continue
-        
-        completed = [t for t in agent_tickets if t['status'] == 'completed']
-        
-        # Duration breakdown
-        under_1hr = 0
-        between_2_3hr = 0
-        over_3hr = 0
-        
-        for t in completed:
-            if t.get('completed_at'):
-                created = datetime.fromisoformat(t['created_at'] if isinstance(t['created_at'], str) else t['created_at'].isoformat())
-                completed_time = datetime.fromisoformat(t['completed_at'] if isinstance(t['completed_at'], str) else t['completed_at'].isoformat())
-                hours = (completed_time - created).total_seconds() / 3600
-                
-                if hours < 1:
-                    under_1hr += 1
-                elif 2 <= hours <= 3:
-                    between_2_3hr += 1
-                elif hours > 3:
-                    over_3hr += 1
-        
-        # Category breakdown
-        category_counts = {}
-        for cat in all_categories:
-            category_counts[cat] = sum(1 for t in agent_tickets if t.get('category') == cat)
-        
-        # Build agent row
-        agent_row = {
-            'agent': agent['username'],
-            'agent_id': agent['id'],
-            'total': len(agent_tickets),
-            'completed': len(completed),
-            'in_progress': sum(1 for t in agent_tickets if t['status'] == 'in_progress'),
-            'pending': sum(1 for t in agent_tickets if t['status'] == 'pending'),
-            'completion_rate': round((len(completed) / len(agent_tickets) * 100) if agent_tickets else 0, 2),
-            'under_1hr': under_1hr,
-            'between_2_3hr': between_2_3hr,
-            'over_3hr': over_3hr,
-            'categories': category_counts
-        }
-        
-        performance_data.append(agent_row)
-    
-    # Calculate summary row
-    summary = {
-        'agent': 'SUMMARY',
-        'agent_id': None,
-        'total': sum(row['total'] for row in performance_data),
-        'completed': sum(row['completed'] for row in performance_data),
-        'in_progress': sum(row['in_progress'] for row in performance_data),
-        'pending': sum(row['pending'] for row in performance_data),
-        'completion_rate': 0,
-        'under_1hr': sum(row['under_1hr'] for row in performance_data),
-        'between_2_3hr': sum(row['between_2_3hr'] for row in performance_data),
-        'over_3hr': sum(row['over_3hr'] for row in performance_data),
-        'categories': {}
-    }
-    
-    # Calculate summary completion rate
-    if summary['total'] > 0:
-        summary['completion_rate'] = round((summary['completed'] / summary['total'] * 100), 2)
-    
-    # Calculate summary category counts
-    for cat in all_categories:
-        summary['categories'][cat] = sum(row['categories'].get(cat, 0) for row in performance_data)
-    
-    return {
-        'data': performance_data,
-        'summary': summary,
-        'categories': all_categories
-    }
 
-@api_router.get("/tickets/years")
-async def get_ticket_years(current_user: User = Depends(get_current_user)):
-    try:
-        pipeline = [
-            {"$project": {"year": {"$year": {"$toDate": "$created_at"}}}},
-            {"$group": {"_id": "$year"}},
-            {"$sort": {"_id": -1}}
-        ]
-        years = await db.tickets.aggregate(pipeline).to_list(None)
-        return {"years": [y["_id"] for y in years if y["_id"] is not None]}
-    except Exception as e:
-        print(f"Error fetching years: {e}")
-        return {"years": []}
-
-@api_router.get("/tickets/categories")
-async def get_ticket_categories(current_user: User = Depends(get_current_user)):
-    try:
-        categories = await db.tickets.distinct("category")
-        return {"categories": [c for c in categories if c]}
-    except Exception as e:
-        print(f"Error fetching categories: {e}")
 @api_router.get("/performance/table-data")
 async def get_performance_table_data(
     year: Optional[int] = None,
