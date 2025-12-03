@@ -12,7 +12,7 @@ if (!botToken) {
 }
 const bot = new Telegraf(botToken);
 
-const API_URL = process.env.API_URL || 'http://localhost:8001/api';
+const API_URL = process.env.API_URL || 'https://roc-6-sdv-bges.site/api';
 const GROUP_CHAT_ID = process.env.GROUP_CHAT_ID || -1002537753569;
 const ADMIN_IDS = [913319004, 298974745, 851931779, 943209523, 571820015, 101722263, 114891561, 63352873, 110042692, 100539709, 5085656866, 1143912090, 99730157, 72726170, 267675364];
 

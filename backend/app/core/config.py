@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8004"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8004", "https://roc-6-sdv-bges.site"]
     
     # Bot
     BOT_TOKEN: Optional[str] = None
