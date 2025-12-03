@@ -231,7 +231,7 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 ```
 
 
-## Recent Updates (December 2024)
+## Recent Updates (December 2025)
 
 ### Two-Way Communication
 - ✅ Users can now reply to agent messages via Telegram bot
@@ -2012,8 +2012,8 @@ def check_conflict(current_ticket, update_data, current_user):
 
 ---
 
-**Built with ❤️ for efficient ticket management**
+**Built with my sick brain for efficient ticket management**
 
 
-*Last Updated: November 30, 2025*
+*Last Updated: Desember 4, 2025*
 *sakit pala eug*
