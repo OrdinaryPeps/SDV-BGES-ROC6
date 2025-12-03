@@ -7,8 +7,8 @@ echo   STARTING TELEGRAM BOT
 echo ====================================
 echo.
 
-REM Set API URL ke port 8001 (sesuai backend)
-set API_URL=http://localhost:8001/api
+REM Set API URL ke port 8003 (sesuai backend)
+set API_URL=http://localhost:8004/api
 
 echo Bot akan terhubung ke: %API_URL%
 echo.

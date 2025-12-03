@@ -230,6 +230,51 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - Role-based Access Control: Depends(get_current_user)
 ```
 
+
+## Recent Updates (December 2024)
+
+### Two-Way Communication
+- ✅ Users can now reply to agent messages via Telegram bot
+- ✅ Inline "Reply" buttons in Telegram notifications
+- ✅ Status-based reply restrictions (no replies on completed tickets)
+- ✅ Real-time WebSocket notifications for agents
+
+### UI/UX Improvements
+- ✅ Agent Tickets page redesigned with 3-tab layout (In Progress | Pending | Completed)
+- ✅ Unread message badges on ticket tabs
+- ✅ Browser push notifications for new tickets and replies
+- ✅ Performance Report auto-loads with current month as default
+- ✅ Auto-reload on filter change (debounced)
+- ✅ Empty data hidden in reports (0 values shown as blank)
+
+### Bug Fixes
+- ✅ Fixed QC2 and LEPAS BI category duplication
+- ✅ Fixed QC2 description format (removed redundant "PERMINTAAN: QC2")
+- ✅ Fixed year filter in performance dashboard (ISO string handling)
+- ✅ Fixed bot API connection (port configuration)
+- ✅ Fixed reply endpoint routing conflict
+
+### Performance Optimizations
+- ✅ Redis caching for dashboard statistics
+- ✅ Debounced filter auto-reload (500ms)
+- ✅ WebSocket connection health monitoring
+
+## Contributing
+
+Contributions are welcome! Please follow these guidelines:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is proprietary and confidential.
+
+## Support
+
+For issues or questions, please contact the development team.
 ### Frontend Components (`/app/frontend/src/`)
 
 #### 1. **App.js** - Root Component

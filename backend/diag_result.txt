@@ -1,0 +1,32 @@
+--- DIAGNOSTIC START ---
+
+--- 1. CHECKING MONGODB ---
+[OK] MongoDB connected at mongodb://localhost:27017
+
+--- 2. CHECKING ADMIN USER ---
+[OK] Admin user found
+   - ID: aa9ce6ab-878a-4bd3-9b32-6dd2069c9b05 ([OK])
+   - Role: admin ([OK])
+   - Status: approved ([OK])
+   - Password Hash: [OK] Present
+
+--- 3. CHECKING CRYPTO (BCRYPT) ---
+[OK] bcrypt imported (Version: 4.0.1)
+[OK] passlib imported
+[OK] Password verification test: SUCCESS
+
+--- 4. CHECKING JWT GENERATION ---
+[OK] JWT Token generated: eyJhbGciOiJIUzI1NiIs...
+
+--- 5. CHECKING USER MODEL VALIDATION ---
+User data keys: ['_id', 'id', 'username', 'full_name', 'role', 'status', 'created_at', 'password_hash', 'hashed_password']
+User created_at type: <class 'str'>
+[OK] User model instantiated: admin
+
+--- 7. CHECKING MIDDLEWARE ---
+Middleware count: 2
+ - CORSMiddleware
+ - BaseHTTPMiddleware
+
+--- 6. CHECKING API ENDPOINT ---
+[FAIL] Could not connect to API (Server not running?)

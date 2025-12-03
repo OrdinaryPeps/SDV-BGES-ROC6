@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Skeleton } from '../components/ui/skeleton';
 
 export default function DashboardPage({ user }) {
   const [stats, setStats] = useState(null);
@@ -20,13 +21,16 @@ export default function DashboardPage({ user }) {
   const [agents, setAgents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [years, setYears] = useState([]);
-  const [selectedYear, setSelectedYear] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const currentYear = new Date().getFullYear().toString();
+  const currentMonth = (new Date().getMonth() + 1).toString();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedAgent, setSelectedAgent] = useState('all');
   const [performanceData, setPerformanceData] = useState([]);
   const [performanceSummary, setPerformanceSummary] = useState(null);
   const [loadingPerformance, setLoadingPerformance] = useState(false);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
   // New Performance Report tables
   const [performanceByAgent, setPerformanceByAgent] = useState({ data: [], grand_total: null });
@@ -35,24 +39,42 @@ export default function DashboardPage({ user }) {
   const [loadingByProduct, setLoadingByProduct] = useState(false);
 
   useEffect(() => {
-    console.log('DashboardPage v0.1.2 loaded');
+    console.log('DashboardPage v0.1.3 loaded');
     fetchStats();
     if (user.role === 'admin') {
       fetchAgents();
       fetchCategories();
       fetchYears();
-      fetchPerformanceByAgent();
-      fetchPerformanceByProduct();
     }
   }, []);
 
-  // Auto-refresh performance tables when filters change
+  // Auto-load performance data on mount (with current year/month defaults)
   useEffect(() => {
-    if (user.role === 'admin') {
-      fetchPerformanceByAgent();
-      fetchPerformanceByProduct();
+    if (user.role === 'admin' && !hasInitialLoad) {
+      // Delay initial load to ensure filters are set
+      const timer = setTimeout(() => {
+        handleLoadReport();
+        setHasInitialLoad(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user.role]);
+
+  // Auto-reload when filters change (with debounce)
+  useEffect(() => {
+    if (user.role === 'admin' && hasInitialLoad) {
+      const timer = setTimeout(() => {
+        handleLoadReport();
+      }, 500); // 500ms debounce
+      return () => clearTimeout(timer);
     }
   }, [selectedYear, selectedMonth, selectedCategory, selectedAgent]);
+
+  const handleLoadReport = () => {
+    fetchPerformanceData();
+    fetchPerformanceByAgent();
+    fetchPerformanceByProduct();
+  };
 
   const fetchStats = async () => {
     try {
@@ -110,10 +132,11 @@ export default function DashboardPage({ user }) {
     const hasCategoryFilter = selectedCategory && selectedCategory !== 'all';
     const hasAgentFilter = selectedAgent && selectedAgent !== 'all';
 
-    if (!hasYearFilter && !hasMonthFilter && !hasCategoryFilter && !hasAgentFilter) {
-      toast.error('Please select at least one filter');
-      return;
-    }
+    // Allow fetching with default 'all' filters
+    // if (!hasYearFilter && !hasMonthFilter && !hasCategoryFilter && !hasAgentFilter) {
+    //   toast.error('Please select at least one filter');
+    //   return;
+    // }
 
     setLoadingPerformance(true);
     try {
@@ -143,6 +166,7 @@ export default function DashboardPage({ user }) {
       if (selectedYear && selectedYear !== 'all') params.append('year', selectedYear);
       if (selectedMonth && selectedMonth !== 'all') params.append('month', selectedMonth);
       if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (selectedAgent && selectedAgent !== 'all') params.append('agent_id', selectedAgent);
 
       const response = await axios.get(`${API}/performance/by-agent?${params.toString()}`);
       setPerformanceByAgent(response.data);
@@ -160,6 +184,7 @@ export default function DashboardPage({ user }) {
       const params = new URLSearchParams();
       if (selectedYear && selectedYear !== 'all') params.append('year', selectedYear);
       if (selectedMonth && selectedMonth !== 'all') params.append('month', selectedMonth);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
       if (selectedAgent && selectedAgent !== 'all') params.append('agent_id', selectedAgent);
 
       const response = await axios.get(`${API}/performance/by-product?${params.toString()}`);
@@ -219,7 +244,12 @@ export default function DashboardPage({ user }) {
         responseType: 'blob'
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Determine MIME type based on format
+      const mimeType = format === 'xlsx'
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'text/csv';
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: mimeType }));
       const link = document.createElement('a');
       link.href = url;
       const extension = format === 'xlsx' ? 'xlsx' : 'csv';
@@ -229,11 +259,20 @@ export default function DashboardPage({ user }) {
       const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       // Generate filename based on filters
-      const yearStr = hasYearFilter ? selectedYear : 'all';
-      const monthStr = hasMonthFilter ? selectedMonth : 'all';
-      const categoryStr = hasCategoryFilter ? selectedCategory.replace(/\s+/g, '_') : 'all';
-      const agentStr = hasAgentFilter ? 'single_agent' : 'all_agents';
-      const filename = `performance_report_${yearStr}_${monthStr}_${categoryStr}_${agentStr}_${dateStr}.${extension}`;
+      let filename = `performance_report_${dateStr}.${extension}`;
+      try {
+        const sanitize = (str) => String(str || '').replace(/[^a-z0-9]/gi, '_');
+
+        const yearStr = hasYearFilter ? sanitize(selectedYear) : 'all';
+        const monthStr = hasMonthFilter ? sanitize(selectedMonth) : 'all';
+        const categoryStr = hasCategoryFilter ? sanitize(selectedCategory) : 'all';
+        const agentStr = hasAgentFilter ? 'single_agent' : 'all_agents';
+
+        filename = `performance_report_${yearStr}_${monthStr}_${categoryStr}_${agentStr}_${dateStr}.${extension}`;
+      } catch (err) {
+        console.error('Error generating filename:', err);
+      }
+      console.log('Final filename:', filename);
 
       link.setAttribute('download', filename);
       document.body.appendChild(link);
@@ -465,14 +504,7 @@ export default function DashboardPage({ user }) {
         </div>
         {user.role === 'admin' && (
           <div className="flex gap-2">
-            <Button onClick={() => exportData('csv')} variant="outline" data-testid="export-csv-button">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={() => exportData('xlsx')} data-testid="export-xlsx-button">
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Export XLSX
-            </Button>
+            {/* Export buttons removed as per request */}
           </div>
         )}
       </div>
@@ -746,16 +778,15 @@ export default function DashboardPage({ user }) {
                   </Select>
                 </div>
 
-                <div className="flex items-end">
-                  <Button
-                    onClick={fetchPerformanceData}
-                    disabled={loadingPerformance}
-                    className="w-full"
-                  >
-                    {loadingPerformance ? 'Loading...' : 'Load Report'}
-                  </Button>
-                </div>
               </div>
+
+              {/* Loading Indicator */}
+              {loadingPerformance && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-slate-600">Loading data...</span>
+                </div>
+              )}
 
               {/* Performance Data Table */}
               {performanceData.length > 0 && (
@@ -767,6 +798,7 @@ export default function DashboardPage({ user }) {
                           <TableHead className="sticky left-0 bg-white z-10">Agent</TableHead>
                           <TableHead className="text-center">Rate %</TableHead>
                           <TableHead className="text-center">&lt; 1hr</TableHead>
+                          <TableHead className="text-center">1-2hr</TableHead>
                           <TableHead className="text-center">2-3hr</TableHead>
                           <TableHead className="text-center">&gt; 3hr</TableHead>
                           <TableHead className="text-center">Pending</TableHead>
@@ -780,12 +812,13 @@ export default function DashboardPage({ user }) {
                           <TableRow key={index}>
                             <TableCell className="font-medium sticky left-0 bg-white z-10">{row.agent}</TableCell>
                             <TableCell className="text-center">{row.completion_rate}%</TableCell>
-                            <TableCell className="text-center">{row.under_1hr}</TableCell>
-                            <TableCell className="text-center">{row.between_2_3hr}</TableCell>
-                            <TableCell className="text-center">{row.over_3hr}</TableCell>
-                            <TableCell className="text-center">{row.pending}</TableCell>
-                            <TableCell className="text-center">{row.in_progress}</TableCell>
-                            <TableCell className="text-center">{row.completed}</TableCell>
+                            <TableCell className="text-center">{row.under_1hr || ''}</TableCell>
+                            <TableCell className="text-center">{row.between_1_2hr || ''}</TableCell>
+                            <TableCell className="text-center">{row.between_2_3hr || ''}</TableCell>
+                            <TableCell className="text-center">{row.over_3hr || ''}</TableCell>
+                            <TableCell className="text-center">{row.pending || ''}</TableCell>
+                            <TableCell className="text-center">{row.in_progress || ''}</TableCell>
+                            <TableCell className="text-center">{row.completed || ''}</TableCell>
                             <TableCell className="text-center">{row.total}</TableCell>
                           </TableRow>
                         ))}
@@ -794,6 +827,7 @@ export default function DashboardPage({ user }) {
                             <TableCell className="font-bold text-slate-900 sticky left-0 bg-slate-50 z-10">SUMMARY</TableCell>
                             <TableCell className="text-center">{performanceSummary.completion_rate}%</TableCell>
                             <TableCell className="text-center">{performanceSummary.under_1hr}</TableCell>
+                            <TableCell className="text-center">{performanceSummary.between_1_2hr}</TableCell>
                             <TableCell className="text-center">{performanceSummary.between_2_3hr}</TableCell>
                             <TableCell className="text-center">{performanceSummary.over_3hr}</TableCell>
                             <TableCell className="text-center">{performanceSummary.pending}</TableCell>
@@ -808,13 +842,7 @@ export default function DashboardPage({ user }) {
 
                   {/* Export Buttons */}
                   <div className="flex gap-2 mt-4">
-                    <Button
-                      onClick={() => exportPerformanceReport('csv')}
-                      variant="outline"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export CSV
-                    </Button>
+                    {/* CSV Export removed as per request */}
                     <Button
                       onClick={() => exportPerformanceReport('xlsx')}
                     >
@@ -838,7 +866,12 @@ export default function DashboardPage({ user }) {
           </CardHeader>
           <CardContent className="overflow-hidden">
             {loadingByAgent ? (
-              <div className="text-center py-8">Loading...</div>
+              <div className="space-y-4 p-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -893,7 +926,12 @@ export default function DashboardPage({ user }) {
           </CardHeader>
           <CardContent className="overflow-hidden">
             {loadingByProduct ? (
-              <div className="text-center py-8">Loading...</div>
+              <div className="space-y-4 p-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>

@@ -14,13 +14,13 @@ call venv\Scripts\activate.bat
 
 echo [2/2] Menjalankan Backend Server...
 echo.
-echo Backend Server: http://localhost:8001
-echo API Documentation: http://localhost:8001/docs
+echo Backend Server: http://localhost:8004
+echo API Documentation: http://localhost:8004/docs
 echo.
 echo Tekan CTRL+C untuk berhenti
 echo.
 
 REM Gunakan Python dari venv untuk menjalankan uvicorn
-venv\Scripts\python.exe -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8004 --reload
 
 pause
