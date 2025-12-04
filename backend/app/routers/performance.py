@@ -147,7 +147,7 @@ async def get_performance_by_agent(
     agent_stats = {}
     grand_total = {
         "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
-        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+        "REPLACE ONT": 0, "TROUBLESHOOT": 0, "qc2_total": 0, "lepas_bi": 0, "total": 0
     }
     
     for t in filtered_tickets:
@@ -159,16 +159,29 @@ async def get_performance_by_agent(
             agent_stats[agent] = {
                 "agent": agent, 
                 "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
-                "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
+                "REPLACE ONT": 0, "TROUBLESHOOT": 0, "qc2_total": 0, "lepas_bi": 0, "total": 0
             }
         
         permintaan = (t.get('permintaan') or '').upper()
-        if permintaan in agent_stats[agent]:
+        product = t.get('category', '')
+        product_upper = product.upper() if product else ""
+        
+        # Count by permintaan type
+        if permintaan in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
             agent_stats[agent][permintaan] += 1
-            agent_stats[agent]["total"] += 1
-            
             grand_total[permintaan] += 1
-            grand_total["total"] += 1
+        
+        # Always count total
+        agent_stats[agent]["total"] += 1
+        grand_total["total"] += 1
+        
+        # Count QC2 and LEPAS BI
+        if "QC2" in product_upper:
+            agent_stats[agent]["qc2_total"] += 1
+            grand_total["qc2_total"] += 1
+        elif "LEPAS" in product_upper:
+            agent_stats[agent]["lepas_bi"] += 1
+            grand_total["lepas_bi"] += 1
 
     result = list(agent_stats.values())
     return {"data": sorted(result, key=lambda x: x['total'], reverse=True), "grand_total": grand_total}

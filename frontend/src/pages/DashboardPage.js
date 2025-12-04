@@ -893,6 +893,8 @@ export default function DashboardPage({ user }) {
                       <TableHead className="text-center font-bold">RECONFIG</TableHead>
                       <TableHead className="text-center font-bold">REPLACE ONT</TableHead>
                       <TableHead className="text-center font-bold">TROUBLESHOOT</TableHead>
+                      <TableHead className="text-center font-bold">QC2</TableHead>
+                      <TableHead className="text-center font-bold">LEPAS BI</TableHead>
                       <TableHead className="text-center font-bold">Grand Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -907,6 +909,8 @@ export default function DashboardPage({ user }) {
                             <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
                             <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
                             <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
+                            <TableCell className="text-center">{row.qc2_total || ''}</TableCell>
+                            <TableCell className="text-center">{row.lepas_bi || ''}</TableCell>
                             <TableCell className="text-center font-bold">{row.total}</TableCell>
                           </TableRow>
                         ))}
@@ -918,13 +922,15 @@ export default function DashboardPage({ user }) {
                             <TableCell className="text-center">{performanceByAgent.grand_total.RECONFIG}</TableCell>
                             <TableCell className="text-center">{performanceByAgent.grand_total['REPLACE ONT']}</TableCell>
                             <TableCell className="text-center">{performanceByAgent.grand_total.TROUBLESHOOT}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.qc2_total}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.lepas_bi}</TableCell>
                             <TableCell className="text-center">{performanceByAgent.grand_total.total}</TableCell>
                           </TableRow>
                         )}
                       </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4 text-slate-500">
+                        <TableCell colSpan={9} className="text-center py-4 text-slate-500">
                           No performance data available
                         </TableCell>
                       </TableRow>
