@@ -225,16 +225,25 @@ async def update_ticket(
             
     if is_completed:
         logger.info(f"Ticket {ticket_id} completed. Sending notification to User ID: {updated_ticket.get('user_telegram_id')}")
+        ticket_number = updated_ticket.get('ticket_number', 'Unknown')
+        user_name = updated_ticket.get('user_telegram_name', 'User')
+        
+        # Send notification to user
         if updated_ticket.get('user_telegram_id'):
-            agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
-            ticket_number = updated_ticket.get('ticket_number', 'Unknown')
-            user_name = updated_ticket.get('user_telegram_name', 'User')
-            
             message = (
-                f"Halo *{user_name}*,\n\n"
-                f"Tiket Anda *{ticket_number}* telah *SELESAI* dikerjakan oleh *{agent_name}*.\n"
+                f"Tiket laporan *{ticket_number}* sudah *RESOLVED*, "
+                f"silahkan diperiksa kembali. Terimakasih. 🙏"
             )
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
+        
+        # Send notification to group
+        if settings.GROUP_CHAT_ID:
+            group_message = (
+                f"✅ *Tiket Selesai*\n\n"
+                f"Tiket laporan *{ticket_number}* sudah *RESOLVED*, "
+                f"silahkan diperiksa kembali ({user_name}). Terimakasih."
+            )
+            asyncio.create_task(send_telegram_message(settings.GROUP_CHAT_ID, group_message))
     
     await redis.delete("dashboard:admin:stats:v2")
     if ticket.get('assigned_agent'):
