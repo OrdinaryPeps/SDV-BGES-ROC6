@@ -228,8 +228,28 @@ async def get_performance_by_product(
             
     result = list(product_stats.values())
     
+    # Custom sort order: alphabetically, but QC2 products in specific order (HSI, WIFI, DATIN)
+    def sort_key(item):
+        product = item.get('product', '').upper()
+        # Non-QC2 and non-LEPAS products come first (alphabetically)
+        if 'QC2' not in product and 'LEPAS' not in product:
+            return (0, item.get('product', ''))
+        # QC2 products in specific order
+        elif 'QC2' in product:
+            if 'HSI' in product:
+                return (1, 'A')  # First
+            elif 'WIFI' in product:
+                return (1, 'B')  # Second
+            elif 'DATIN' in product:
+                return (1, 'C')  # Third
+            else:
+                return (1, 'D')  # Other QC2
+        # LEPAS BI comes last
+        else:
+            return (2, item.get('product', ''))
+    
     return {
-        "data": sorted(result, key=lambda x: x['total'], reverse=True), 
+        "data": sorted(result, key=sort_key), 
         "grand_total": grand_total,
         "pivoted_total": pivoted_total
     }
