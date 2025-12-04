@@ -947,9 +947,9 @@ export default function DashboardPage({ user }) {
                       <TableHead rowSpan={2} className="text-center font-bold">LEPAS BI</TableHead>
                     </TableRow>
                     <TableRow>
-                      <TableHead className="text-center text-xs">HSI</TableHead>
-                      <TableHead className="text-center text-xs">WIFI</TableHead>
-                      <TableHead className="text-center text-xs">DATIN</TableHead>
+                      <TableHead className="text-center text-xs font-bold">HSI</TableHead>
+                      <TableHead className="text-center text-xs font-bold">WIFI</TableHead>
+                      <TableHead className="text-center text-xs font-bold">DATIN</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

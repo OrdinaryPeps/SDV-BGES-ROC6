@@ -234,7 +234,7 @@ async def get_performance_by_product(
                 elif "DATIN" in product_upper:
                     pivoted_stats[permintaan]["qc2_datin"] += 1
                     pivoted_total["qc2_datin"] += 1
-            elif "LEPAS" in product_upper or "BI" in product_upper:
+            elif "LEPAS" in product_upper:  # Only match products containing LEPAS
                 pivoted_stats[permintaan]["lepas_bi"] += 1
                 pivoted_total["lepas_bi"] += 1
             
