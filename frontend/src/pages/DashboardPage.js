@@ -937,19 +937,14 @@ export default function DashboardPage({ user }) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead rowSpan={2} className="font-bold">PRODUCT</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">INTEGRASI</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">PUSH BIMA</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">RECONFIG</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">REPLACE ONT</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">TROUBLESHOOT</TableHead>
-                      <TableHead colSpan={3} className="text-center font-bold border-b">QC2</TableHead>
-                      <TableHead rowSpan={2} className="text-center font-bold">LEPAS BI</TableHead>
-                    </TableRow>
-                    <TableRow>
-                      <TableHead className="text-center text-xs font-bold">HSI</TableHead>
-                      <TableHead className="text-center text-xs font-bold">WIFI</TableHead>
-                      <TableHead className="text-center text-xs font-bold">DATIN</TableHead>
+                      <TableHead className="font-bold">PRODUCT</TableHead>
+                      <TableHead className="text-center font-bold">INTEGRASI</TableHead>
+                      <TableHead className="text-center font-bold">PUSH BIMA</TableHead>
+                      <TableHead className="text-center font-bold">RECONFIG</TableHead>
+                      <TableHead className="text-center font-bold">REPLACE</TableHead>
+                      <TableHead className="text-center font-bold">TROUBLESHOOT</TableHead>
+                      <TableHead className="text-center font-bold">QC2</TableHead>
+                      <TableHead className="text-center font-bold">LEPAS BI</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -958,29 +953,18 @@ export default function DashboardPage({ user }) {
                         {performanceByProduct.data.map((row, index) => {
                           const productUpper = (row.product || '').toUpperCase();
                           const isQC2 = productUpper.includes('QC2');
-                          const isQC2HSI = isQC2 && productUpper.includes('HSI');
-                          const isQC2WIFI = isQC2 && productUpper.includes('WIFI');
-                          const isQC2DATIN = isQC2 && productUpper.includes('DATIN');
                           const isLepasBI = productUpper.includes('LEPAS');
-                          const rowTotal = (row.INTEGRASI || 0) + (row['PUSH BIMA'] || 0) + (row.RECONFIG || 0) + (row['REPLACE ONT'] || 0) + (row.TROUBLESHOOT || 0);
-
-                          // Simplify product name: "QC2 - HSI" -> "QC2"
-                          let displayProduct = row.product;
-                          if (isQC2) {
-                            displayProduct = 'QC2';
-                          }
+                          const rowTotal = row.total || 0;
 
                           return (
                             <TableRow key={index}>
-                              <TableCell className="font-medium">{displayProduct}</TableCell>
+                              <TableCell className="font-medium">{row.product}</TableCell>
                               <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
                               <TableCell className="text-center">{row['PUSH BIMA'] || ''}</TableCell>
                               <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
                               <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
                               <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
-                              <TableCell className="text-center">{isQC2HSI ? rowTotal : ''}</TableCell>
-                              <TableCell className="text-center">{isQC2WIFI ? rowTotal : ''}</TableCell>
-                              <TableCell className="text-center">{isQC2DATIN ? rowTotal : ''}</TableCell>
+                              <TableCell className="text-center">{isQC2 ? rowTotal : ''}</TableCell>
                               <TableCell className="text-center">{isLepasBI ? rowTotal : ''}</TableCell>
                             </TableRow>
                           );
@@ -993,16 +977,14 @@ export default function DashboardPage({ user }) {
                             <TableCell className="text-center">{performanceByProduct.grand_total.RECONFIG}</TableCell>
                             <TableCell className="text-center">{performanceByProduct.grand_total['REPLACE ONT']}</TableCell>
                             <TableCell className="text-center">{performanceByProduct.grand_total.TROUBLESHOOT}</TableCell>
-                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_hsi || 0}</TableCell>
-                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_wifi || 0}</TableCell>
-                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_datin || 0}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_total || 0}</TableCell>
                             <TableCell className="text-center">{performanceByProduct.pivoted_total?.lepas_bi || 0}</TableCell>
                           </TableRow>
                         )}
                       </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center py-4 text-slate-500">
+                        <TableCell colSpan={8} className="text-center py-4 text-slate-500">
                           No performance data available
                         </TableCell>
                       </TableRow>

@@ -195,11 +195,8 @@ async def get_performance_by_product(
         "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
     }
     
-    # New pivoted structure: permintaan as rows, product categories as columns
-    # Categories: QC2 (HSI, WIFI, DATIN), LEPAS BI
-    permintaan_types = ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]
-    pivoted_stats = {p: {"permintaan": p, "qc2_hsi": 0, "qc2_wifi": 0, "qc2_datin": 0, "lepas_bi": 0, "total": 0} for p in permintaan_types}
-    pivoted_total = {"qc2_hsi": 0, "qc2_wifi": 0, "qc2_datin": 0, "lepas_bi": 0, "total": 0}
+    # New pivoted structure: simple QC2 and LEPAS BI totals
+    pivoted_total = {"qc2_total": 0, "lepas_bi": 0}
     
     for t in filtered_tickets:
         product = t.get('category', 'Unknown')
@@ -213,40 +210,23 @@ async def get_performance_by_product(
                 "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
             }
             
-        if permintaan in product_stats[product]:
+        if permintaan in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
             product_stats[product][permintaan] += 1
             product_stats[product]["total"] += 1
             grand_total[permintaan] += 1
             grand_total["total"] += 1
-        
-        # New pivoted stats
-        if permintaan in pivoted_stats:
-            product_upper = product.upper() if product else ""
             
-            # Determine column based on category
+            # Count QC2 and LEPAS BI totals
+            product_upper = product.upper() if product else ""
             if "QC2" in product_upper:
-                if "HSI" in product_upper:
-                    pivoted_stats[permintaan]["qc2_hsi"] += 1
-                    pivoted_total["qc2_hsi"] += 1
-                elif "WIFI" in product_upper:
-                    pivoted_stats[permintaan]["qc2_wifi"] += 1
-                    pivoted_total["qc2_wifi"] += 1
-                elif "DATIN" in product_upper:
-                    pivoted_stats[permintaan]["qc2_datin"] += 1
-                    pivoted_total["qc2_datin"] += 1
-            elif "LEPAS" in product_upper:  # Only match products containing LEPAS
-                pivoted_stats[permintaan]["lepas_bi"] += 1
+                pivoted_total["qc2_total"] += 1
+            elif "LEPAS" in product_upper:
                 pivoted_total["lepas_bi"] += 1
             
-            pivoted_stats[permintaan]["total"] += 1
-            pivoted_total["total"] += 1
-            
     result = list(product_stats.values())
-    pivoted_data = [pivoted_stats[p] for p in permintaan_types]
     
     return {
         "data": sorted(result, key=lambda x: x['total'], reverse=True), 
         "grand_total": grand_total,
-        "pivoted_data": pivoted_data,
         "pivoted_total": pivoted_total
     }
