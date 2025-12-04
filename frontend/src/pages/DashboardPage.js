@@ -917,7 +917,7 @@ export default function DashboardPage({ user }) {
         </Card>
       </div>
 
-      {/* Performance by Product Table - Restructured with QC2 and LEPAS BI as columns */}
+      {/* Performance by Product Table */}
       <div className="mt-8 max-w-full mb-8">
         <Card className="overflow-hidden">
           <CardHeader>
@@ -936,47 +936,69 @@ export default function DashboardPage({ user }) {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    {/* Row 1: Main category headers */}
+                    {/* Row 1: Main headers with QC2 group */}
                     <tr className="border-b">
-                      <th rowSpan={2} className="border px-4 py-2 text-left font-bold bg-slate-50">PERMINTAAN</th>
-                      <th colSpan={3} className="border px-4 py-2 text-center font-bold bg-blue-50">QC2</th>
-                      <th rowSpan={2} className="border px-4 py-2 text-center font-bold bg-green-50">LEPAS BI</th>
-                      <th rowSpan={2} className="border px-4 py-2 text-center font-bold bg-slate-100">TOTAL</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-left font-bold bg-slate-50">PRODUCT</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">INTEGRASI</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">PUSH BIMA</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">RECONFIG</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">REPLACE ONT</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">TROUBLESHOOT</th>
+                      <th colSpan={3} className="border px-3 py-2 text-center font-bold bg-blue-50">QC2</th>
+                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold bg-green-50">LEPAS BI</th>
                     </tr>
-                    {/* Row 2: Sub-category headers for QC2 */}
+                    {/* Row 2: Sub-headers for QC2 */}
                     <tr className="border-b">
-                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">HSI</th>
-                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">WIFI</th>
-                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">DATIN</th>
+                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">HSI</th>
+                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">WIFI</th>
+                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">DATIN</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {performanceByProduct.pivoted_data ? (
+                    {Array.isArray(performanceByProduct.data) && performanceByProduct.data.length > 0 ? (
                       <>
-                        {performanceByProduct.pivoted_data.map((row, index) => (
-                          <tr key={index} className="border-b hover:bg-slate-50">
-                            <td className="border px-4 py-2 font-medium">{row.permintaan}</td>
-                            <td className="border px-4 py-2 text-center">{row.qc2_hsi || '-'}</td>
-                            <td className="border px-4 py-2 text-center">{row.qc2_wifi || '-'}</td>
-                            <td className="border px-4 py-2 text-center">{row.qc2_datin || '-'}</td>
-                            <td className="border px-4 py-2 text-center">{row.lepas_bi || '-'}</td>
-                            <td className="border px-4 py-2 text-center font-semibold">{row.total || 0}</td>
-                          </tr>
-                        ))}
-                        {performanceByProduct.pivoted_total && (
+                        {performanceByProduct.data.map((row, index) => {
+                          // Determine QC2 sub-columns based on product name
+                          const productUpper = (row.product || '').toUpperCase();
+                          const isQC2HSI = productUpper.includes('QC2') && productUpper.includes('HSI');
+                          const isQC2WIFI = productUpper.includes('QC2') && productUpper.includes('WIFI');
+                          const isQC2DATIN = productUpper.includes('QC2') && productUpper.includes('DATIN');
+                          const isLepasBI = productUpper.includes('LEPAS') || (productUpper === 'LEPAS BI');
+                          const rowTotal = (row.INTEGRASI || 0) + (row['PUSH BIMA'] || 0) + (row.RECONFIG || 0) + (row['REPLACE ONT'] || 0) + (row.TROUBLESHOOT || 0);
+
+                          return (
+                            <tr key={index} className="border-b hover:bg-slate-50">
+                              <td className="border px-3 py-2 font-medium">{row.product}</td>
+                              <td className="border px-3 py-2 text-center">{row.INTEGRASI || ''}</td>
+                              <td className="border px-3 py-2 text-center">{row['PUSH BIMA'] || ''}</td>
+                              <td className="border px-3 py-2 text-center">{row.RECONFIG || ''}</td>
+                              <td className="border px-3 py-2 text-center">{row['REPLACE ONT'] || ''}</td>
+                              <td className="border px-3 py-2 text-center">{row.TROUBLESHOOT || ''}</td>
+                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2HSI ? rowTotal : ''}</td>
+                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2WIFI ? rowTotal : ''}</td>
+                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2DATIN ? rowTotal : ''}</td>
+                              <td className="border px-3 py-2 text-center bg-green-50/30">{isLepasBI ? rowTotal : ''}</td>
+                            </tr>
+                          );
+                        })}
+                        {performanceByProduct.grand_total && (
                           <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                            <td className="border px-4 py-2 font-bold">Grand Total</td>
-                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_hsi || 0}</td>
-                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_wifi || 0}</td>
-                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_datin || 0}</td>
-                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.lepas_bi || 0}</td>
-                            <td className="border px-4 py-2 text-center font-bold">{performanceByProduct.pivoted_total.total || 0}</td>
+                            <td className="border px-3 py-2 font-bold">Grand Total</td>
+                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.INTEGRASI}</td>
+                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total['PUSH BIMA']}</td>
+                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.RECONFIG}</td>
+                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total['REPLACE ONT']}</td>
+                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.TROUBLESHOOT}</td>
+                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_hsi || 0}</td>
+                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_wifi || 0}</td>
+                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_datin || 0}</td>
+                            <td className="border px-3 py-2 text-center bg-green-50/30">{performanceByProduct.pivoted_total?.lepas_bi || 0}</td>
                           </tr>
                         )}
                       </>
                     ) : (
                       <tr>
-                        <td colSpan={6} className="border px-4 py-4 text-center text-slate-500">
+                        <td colSpan={10} className="border px-4 py-4 text-center text-slate-500">
                           No performance data available
                         </td>
                       </tr>
