@@ -201,27 +201,30 @@ async def get_performance_by_product(
     for t in filtered_tickets:
         product = t.get('category', 'Unknown')
         permintaan = (t.get('permintaan') or '').upper()
+        product_upper = product.upper() if product else ""
         
-        # Original stats
+        # Original stats - create product entry if not exists
         if product not in product_stats:
             product_stats[product] = {
                 "product": product, 
                 "INTEGRASI": 0, "PUSH BIMA": 0, "RECONFIG": 0, 
                 "REPLACE ONT": 0, "TROUBLESHOOT": 0, "total": 0
             }
-            
+        
+        # Count permintaan if valid
         if permintaan in ["INTEGRASI", "PUSH BIMA", "RECONFIG", "REPLACE ONT", "TROUBLESHOOT"]:
             product_stats[product][permintaan] += 1
-            product_stats[product]["total"] += 1
             grand_total[permintaan] += 1
-            grand_total["total"] += 1
+        
+        # Always count towards product total (even if permintaan is null)
+        product_stats[product]["total"] += 1
+        grand_total["total"] += 1
             
-            # Count QC2 and LEPAS BI totals
-            product_upper = product.upper() if product else ""
-            if "QC2" in product_upper:
-                pivoted_total["qc2_total"] += 1
-            elif "LEPAS" in product_upper:
-                pivoted_total["lepas_bi"] += 1
+        # Count QC2 and LEPAS BI totals (regardless of permintaan)
+        if "QC2" in product_upper:
+            pivoted_total["qc2_total"] += 1
+        elif "LEPAS" in product_upper:
+            pivoted_total["lepas_bi"] += 1
             
     result = list(product_stats.values())
     
