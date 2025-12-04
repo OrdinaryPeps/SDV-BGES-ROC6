@@ -200,12 +200,14 @@ async def update_ticket(
         
         # Send notification to user (WITHOUT reply button)
         if updated_ticket.get('user_telegram_id'):
+            logger.info(f"Sending claim notification to user: {updated_ticket.get('user_telegram_id')}")
             message = (
                 f"Halo *{user_name}*,\n\n"
                 f"Tiket Anda *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
                 f"Mohon tunggu, kami sedang memprosesnya. 👨‍💻"
             )
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))  # No ticket_id = no reply button
+            logger.info(f"User notification task created for {updated_ticket.get('user_telegram_id')}")
         else:
             logger.warning(f"User Telegram ID tidak ditemukan untuk tiket {ticket_id}, skipping user notification")
         
