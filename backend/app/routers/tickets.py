@@ -9,6 +9,7 @@ import random
 import string
 
 from ..core.database import get_db, get_redis
+from ..core.config import settings
 from ..core.deps import get_current_user
 from ..models.user import User
 from ..models.ticket import Ticket, TicketCreate, TicketUpdate
