@@ -917,7 +917,7 @@ export default function DashboardPage({ user }) {
         </Card>
       </div>
 
-      {/* Performance by Product Table */}
+      {/* Performance by Product Table - Restructured with QC2 and LEPAS BI as columns */}
       <div className="mt-8 max-w-full mb-8">
         <Card className="overflow-hidden">
           <CardHeader>
@@ -934,46 +934,55 @@ export default function DashboardPage({ user }) {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="font-bold">PRODUCT</TableHead>
-                      <TableHead className="text-center font-bold">INTEGRASI</TableHead>
-                      <TableHead className="text-center font-bold">PUSH BIMA</TableHead>
-                      <TableHead className="text-center font-bold">RECONFIG</TableHead>
-                      <TableHead className="text-center font-bold">REPLACE ONT</TableHead>
-                      <TableHead className="text-center font-bold">TROUBLESHOOT</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array.isArray(performanceByProduct.data) ? performanceByProduct.data.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{row.product}</TableCell>
-                        <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
-                        <TableCell className="text-center">{row['PUSH BIMA'] || ''}</TableCell>
-                        <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
-                        <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
-                        <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-slate-500">
+                <table className="w-full border-collapse">
+                  <thead>
+                    {/* Row 1: Main category headers */}
+                    <tr className="border-b">
+                      <th rowSpan={2} className="border px-4 py-2 text-left font-bold bg-slate-50">PERMINTAAN</th>
+                      <th colSpan={3} className="border px-4 py-2 text-center font-bold bg-blue-50">QC2</th>
+                      <th rowSpan={2} className="border px-4 py-2 text-center font-bold bg-green-50">LEPAS BI</th>
+                      <th rowSpan={2} className="border px-4 py-2 text-center font-bold bg-slate-100">TOTAL</th>
+                    </tr>
+                    {/* Row 2: Sub-category headers for QC2 */}
+                    <tr className="border-b">
+                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">HSI</th>
+                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">WIFI</th>
+                      <th className="border px-4 py-2 text-center font-semibold bg-blue-50">DATIN</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {performanceByProduct.pivoted_data ? (
+                      <>
+                        {performanceByProduct.pivoted_data.map((row, index) => (
+                          <tr key={index} className="border-b hover:bg-slate-50">
+                            <td className="border px-4 py-2 font-medium">{row.permintaan}</td>
+                            <td className="border px-4 py-2 text-center">{row.qc2_hsi || '-'}</td>
+                            <td className="border px-4 py-2 text-center">{row.qc2_wifi || '-'}</td>
+                            <td className="border px-4 py-2 text-center">{row.qc2_datin || '-'}</td>
+                            <td className="border px-4 py-2 text-center">{row.lepas_bi || '-'}</td>
+                            <td className="border px-4 py-2 text-center font-semibold">{row.total || 0}</td>
+                          </tr>
+                        ))}
+                        {performanceByProduct.pivoted_total && (
+                          <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                            <td className="border px-4 py-2 font-bold">Grand Total</td>
+                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_hsi || 0}</td>
+                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_wifi || 0}</td>
+                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.qc2_datin || 0}</td>
+                            <td className="border px-4 py-2 text-center">{performanceByProduct.pivoted_total.lepas_bi || 0}</td>
+                            <td className="border px-4 py-2 text-center font-bold">{performanceByProduct.pivoted_total.total || 0}</td>
+                          </tr>
+                        )}
+                      </>
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="border px-4 py-4 text-center text-slate-500">
                           No performance data available
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     )}
-                    {performanceByProduct.grand_total && (
-                      <TableRow className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                        <TableCell className="font-bold">Grand Total</TableCell>
-                        <TableCell className="text-center">{performanceByProduct.grand_total.INTEGRASI}</TableCell>
-                        <TableCell className="text-center">{performanceByProduct.grand_total['PUSH BIMA']}</TableCell>
-                        <TableCell className="text-center">{performanceByProduct.grand_total.RECONFIG}</TableCell>
-                        <TableCell className="text-center">{performanceByProduct.grand_total['REPLACE ONT']}</TableCell>
-                        <TableCell className="text-center">{performanceByProduct.grand_total.TROUBLESHOOT}</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>
