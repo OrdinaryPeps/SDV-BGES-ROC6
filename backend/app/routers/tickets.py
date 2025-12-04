@@ -193,19 +193,32 @@ async def update_ticket(
     
     if is_new_assignment:
         logger.info(f"New assignment detected for ticket {ticket_id}. User ID: {updated_ticket.get('user_telegram_id')}")
+        agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
+        ticket_number = updated_ticket.get('ticket_number', 'Unknown')
+        user_name = updated_ticket.get('user_telegram_name', 'User')
+        
+        # Send notification to user (WITHOUT reply button)
         if updated_ticket.get('user_telegram_id'):
-            agent_name = updated_ticket.get('assigned_agent_name', 'Agent')
-            ticket_number = updated_ticket.get('ticket_number', 'Unknown')
-            user_name = updated_ticket.get('user_telegram_name', 'User')
-            
             message = (
                 f"Halo *{user_name}*,\n\n"
                 f"Tiket Anda *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
                 f"Mohon tunggu, kami sedang memprosesnya. 👨‍💻"
             )
-            asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message, ticket_id=ticket_id))
+            asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))  # No ticket_id = no reply button
         else:
-            logger.warning(f"User Telegram ID tidak ditemukan untuk tiket {ticket_id}, skipping notification")
+            logger.warning(f"User Telegram ID tidak ditemukan untuk tiket {ticket_id}, skipping user notification")
+        
+        # Send notification to group
+        if settings.GROUP_CHAT_ID:
+            group_message = (
+                f"📌 *Tiket Diambil*\n\n"
+                f"Tiket *{ticket_number}* telah diambil oleh *{agent_name}*.\n"
+                f"User: {user_name}\n"
+                f"Kategori: {updated_ticket.get('category', '-')}"
+            )
+            asyncio.create_task(send_telegram_message(settings.GROUP_CHAT_ID, group_message))
+        else:
+            logger.warning(f"GROUP_CHAT_ID tidak ditemukan, skipping group notification")
             
     if is_completed:
         logger.info(f"Ticket {ticket_id} completed. Sending notification to User ID: {updated_ticket.get('user_telegram_id')}")
