@@ -934,77 +934,81 @@ export default function DashboardPage({ user }) {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    {/* Row 1: Main headers with QC2 group */}
-                    <tr className="border-b">
-                      <th rowSpan={2} className="border px-3 py-2 text-left font-bold bg-slate-50">PRODUCT</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">INTEGRASI</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">PUSH BIMA</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">RECONFIG</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">REPLACE ONT</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold">TROUBLESHOOT</th>
-                      <th colSpan={3} className="border px-3 py-2 text-center font-bold bg-blue-50">QC2</th>
-                      <th rowSpan={2} className="border px-3 py-2 text-center font-bold bg-green-50">LEPAS BI</th>
-                    </tr>
-                    {/* Row 2: Sub-headers for QC2 */}
-                    <tr className="border-b">
-                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">HSI</th>
-                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">WIFI</th>
-                      <th className="border px-3 py-2 text-center font-semibold bg-blue-50">DATIN</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead rowSpan={2} className="font-bold">PRODUCT</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">INTEGRASI</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">PUSH BIMA</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">RECONFIG</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">REPLACE ONT</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">TROUBLESHOOT</TableHead>
+                      <TableHead colSpan={3} className="text-center font-bold border-b">QC2</TableHead>
+                      <TableHead rowSpan={2} className="text-center font-bold">LEPAS BI</TableHead>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead className="text-center text-xs">HSI</TableHead>
+                      <TableHead className="text-center text-xs">WIFI</TableHead>
+                      <TableHead className="text-center text-xs">DATIN</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {Array.isArray(performanceByProduct.data) && performanceByProduct.data.length > 0 ? (
                       <>
                         {performanceByProduct.data.map((row, index) => {
-                          // Determine QC2 sub-columns based on product name
                           const productUpper = (row.product || '').toUpperCase();
-                          const isQC2HSI = productUpper.includes('QC2') && productUpper.includes('HSI');
-                          const isQC2WIFI = productUpper.includes('QC2') && productUpper.includes('WIFI');
-                          const isQC2DATIN = productUpper.includes('QC2') && productUpper.includes('DATIN');
-                          const isLepasBI = productUpper.includes('LEPAS') || (productUpper === 'LEPAS BI');
+                          const isQC2 = productUpper.includes('QC2');
+                          const isQC2HSI = isQC2 && productUpper.includes('HSI');
+                          const isQC2WIFI = isQC2 && productUpper.includes('WIFI');
+                          const isQC2DATIN = isQC2 && productUpper.includes('DATIN');
+                          const isLepasBI = productUpper.includes('LEPAS');
                           const rowTotal = (row.INTEGRASI || 0) + (row['PUSH BIMA'] || 0) + (row.RECONFIG || 0) + (row['REPLACE ONT'] || 0) + (row.TROUBLESHOOT || 0);
 
+                          // Simplify product name: "QC2 - HSI" -> "QC2"
+                          let displayProduct = row.product;
+                          if (isQC2) {
+                            displayProduct = 'QC2';
+                          }
+
                           return (
-                            <tr key={index} className="border-b hover:bg-slate-50">
-                              <td className="border px-3 py-2 font-medium">{row.product}</td>
-                              <td className="border px-3 py-2 text-center">{row.INTEGRASI || ''}</td>
-                              <td className="border px-3 py-2 text-center">{row['PUSH BIMA'] || ''}</td>
-                              <td className="border px-3 py-2 text-center">{row.RECONFIG || ''}</td>
-                              <td className="border px-3 py-2 text-center">{row['REPLACE ONT'] || ''}</td>
-                              <td className="border px-3 py-2 text-center">{row.TROUBLESHOOT || ''}</td>
-                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2HSI ? rowTotal : ''}</td>
-                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2WIFI ? rowTotal : ''}</td>
-                              <td className="border px-3 py-2 text-center bg-blue-50/30">{isQC2DATIN ? rowTotal : ''}</td>
-                              <td className="border px-3 py-2 text-center bg-green-50/30">{isLepasBI ? rowTotal : ''}</td>
-                            </tr>
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{displayProduct}</TableCell>
+                              <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
+                              <TableCell className="text-center">{row['PUSH BIMA'] || ''}</TableCell>
+                              <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
+                              <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
+                              <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
+                              <TableCell className="text-center">{isQC2HSI ? rowTotal : ''}</TableCell>
+                              <TableCell className="text-center">{isQC2WIFI ? rowTotal : ''}</TableCell>
+                              <TableCell className="text-center">{isQC2DATIN ? rowTotal : ''}</TableCell>
+                              <TableCell className="text-center">{isLepasBI ? rowTotal : ''}</TableCell>
+                            </TableRow>
                           );
                         })}
                         {performanceByProduct.grand_total && (
-                          <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                            <td className="border px-3 py-2 font-bold">Grand Total</td>
-                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.INTEGRASI}</td>
-                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total['PUSH BIMA']}</td>
-                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.RECONFIG}</td>
-                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total['REPLACE ONT']}</td>
-                            <td className="border px-3 py-2 text-center">{performanceByProduct.grand_total.TROUBLESHOOT}</td>
-                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_hsi || 0}</td>
-                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_wifi || 0}</td>
-                            <td className="border px-3 py-2 text-center bg-blue-50/30">{performanceByProduct.pivoted_total?.qc2_datin || 0}</td>
-                            <td className="border px-3 py-2 text-center bg-green-50/30">{performanceByProduct.pivoted_total?.lepas_bi || 0}</td>
-                          </tr>
+                          <TableRow className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                            <TableCell className="font-bold">Grand Total</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.grand_total.INTEGRASI}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.grand_total['PUSH BIMA']}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.grand_total.RECONFIG}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.grand_total['REPLACE ONT']}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.grand_total.TROUBLESHOOT}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_hsi || 0}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_wifi || 0}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.qc2_datin || 0}</TableCell>
+                            <TableCell className="text-center">{performanceByProduct.pivoted_total?.lepas_bi || 0}</TableCell>
+                          </TableRow>
                         )}
                       </>
                     ) : (
-                      <tr>
-                        <td colSpan={10} className="border px-4 py-4 text-center text-slate-500">
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-4 text-slate-500">
                           No performance data available
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
