@@ -808,32 +808,42 @@ export default function DashboardPage({ user }) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {performanceData.map((row, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium sticky left-0 bg-white z-10">{row.agent}</TableCell>
-                            <TableCell className="text-center">{row.completion_rate}%</TableCell>
-                            <TableCell className="text-center">{row.under_1hr || ''}</TableCell>
-                            <TableCell className="text-center">{row.between_1_2hr || ''}</TableCell>
-                            <TableCell className="text-center">{row.between_2_3hr || ''}</TableCell>
-                            <TableCell className="text-center">{row.over_3hr || ''}</TableCell>
-                            <TableCell className="text-center">{row.pending || ''}</TableCell>
-                            <TableCell className="text-center">{row.in_progress || ''}</TableCell>
-                            <TableCell className="text-center">{row.completed || ''}</TableCell>
-                            <TableCell className="text-center">{row.total}</TableCell>
-                          </TableRow>
-                        ))}
-                        {performanceSummary && (
-                          <TableRow className="bg-slate-50 font-bold border-t-2 border-slate-300">
-                            <TableCell className="font-bold text-slate-900 sticky left-0 bg-slate-50 z-10">SUMMARY</TableCell>
-                            <TableCell className="text-center">{performanceSummary.completion_rate}%</TableCell>
-                            <TableCell className="text-center">{performanceSummary.under_1hr}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.between_1_2hr}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.between_2_3hr}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.over_3hr}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.pending}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.in_progress}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.completed}</TableCell>
-                            <TableCell className="text-center">{performanceSummary.total}</TableCell>
+                        {Array.isArray(performanceData) && performanceData.length > 0 ? (
+                          <>
+                            {performanceData.map((row, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium sticky left-0 bg-white z-10">{row.agent}</TableCell>
+                                <TableCell className="text-center">{row.completion_rate}%</TableCell>
+                                <TableCell className="text-center">{row.under_1hr || ''}</TableCell>
+                                <TableCell className="text-center">{row.between_1_2hr || ''}</TableCell>
+                                <TableCell className="text-center">{row.between_2_3hr || ''}</TableCell>
+                                <TableCell className="text-center">{row.over_3hr || ''}</TableCell>
+                                <TableCell className="text-center">{row.pending || ''}</TableCell>
+                                <TableCell className="text-center">{row.in_progress || ''}</TableCell>
+                                <TableCell className="text-center">{row.completed || ''}</TableCell>
+                                <TableCell className="text-center">{row.total}</TableCell>
+                              </TableRow>
+                            ))}
+                            {performanceSummary && (
+                              <TableRow className="bg-slate-50 font-bold border-t-2 border-slate-300">
+                                <TableCell className="font-bold text-slate-900 sticky left-0 bg-slate-50 z-10">SUMMARY</TableCell>
+                                <TableCell className="text-center">{performanceSummary.completion_rate}%</TableCell>
+                                <TableCell className="text-center">{performanceSummary.under_1hr}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.between_1_2hr}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.between_2_3hr}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.over_3hr}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.pending}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.in_progress}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.completed}</TableCell>
+                                <TableCell className="text-center">{performanceSummary.total}</TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={10} className="text-center py-4 text-slate-500">
+                              No performance data available
+                            </TableCell>
                           </TableRow>
                         )}
                       </TableBody>
@@ -887,26 +897,36 @@ export default function DashboardPage({ user }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {performanceByAgent.data.map((row, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{row.agent}</TableCell>
-                        <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
-                        <TableCell className="text-center">{row['PUSH BIMA'] || ''}</TableCell>
-                        <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
-                        <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
-                        <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
-                        <TableCell className="text-center font-bold">{row.total}</TableCell>
-                      </TableRow>
-                    ))}
-                    {performanceByAgent.grand_total && (
-                      <TableRow className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                        <TableCell className="font-bold">Grand Total</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total.INTEGRASI}</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total['PUSH BIMA']}</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total.RECONFIG}</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total['REPLACE ONT']}</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total.TROUBLESHOOT}</TableCell>
-                        <TableCell className="text-center">{performanceByAgent.grand_total.total}</TableCell>
+                    {Array.isArray(performanceByAgent.data) && performanceByAgent.data.length > 0 ? (
+                      <>
+                        {performanceByAgent.data.map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{row.agent}</TableCell>
+                            <TableCell className="text-center">{row.INTEGRASI || ''}</TableCell>
+                            <TableCell className="text-center">{row['PUSH BIMA'] || ''}</TableCell>
+                            <TableCell className="text-center">{row.RECONFIG || ''}</TableCell>
+                            <TableCell className="text-center">{row['REPLACE ONT'] || ''}</TableCell>
+                            <TableCell className="text-center">{row.TROUBLESHOOT || ''}</TableCell>
+                            <TableCell className="text-center font-bold">{row.total}</TableCell>
+                          </TableRow>
+                        ))}
+                        {performanceByAgent.grand_total && (
+                          <TableRow className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                            <TableCell className="font-bold">Grand Total</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.INTEGRASI}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total['PUSH BIMA']}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.RECONFIG}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total['REPLACE ONT']}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.TROUBLESHOOT}</TableCell>
+                            <TableCell className="text-center">{performanceByAgent.grand_total.total}</TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-4 text-slate-500">
+                          No performance data available
+                        </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
