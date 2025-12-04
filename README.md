@@ -37,7 +37,11 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - **Advanced Filtering**: Filter by Year, Month, Category, Agent
 - **Two Report Views**:
   - Laporan by Agent: Performance metrics per agent
-  - Laporan by Product: Statistics per category
+  - Laporan by Product: Statistics per category dengan kolom QC2 dan LEPAS BI
+- **Performance by Product Table**: 
+  - Menampilkan statistik per produk dengan kolom permintaan (INTEGRASI, PUSH BIMA, RECONFIG, REPLACE, TROUBLESHOOT)
+  - Kolom tambahan QC2 dan LEPAS BI untuk tracking khusus
+  - Urutan produk konsisten (QC2-HSI, QC2-WIFI, QC2-DATIN, LEPAS BI)
 - **Export Options**: CSV & XLSX dengan custom column format
 - **Real-time Statistics**: Dashboard dengan data hari ini, bulan ini, total
 - **Export Performance Report**: Download laporan detail performa (CSV/Excel) dengan filter lengkap
@@ -54,11 +58,16 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 
 ### 🤖 Bot Integration
 - **Node.js Telegram Bot**: Fully integrated dengan FastAPI backend
-- **Comment Notifications**: Real-time notification ke user via bot
-- **Assignment Notifications**: Notifikasi otomatis ke user saat tiket diambil agent
-- **Completion Notifications**: Notifikasi otomatis ke user saat tiket selesai dikerjakan
+- **Comment Notifications**: Real-time notification ke user via bot dengan tombol "Balas"
+- **Assignment Notifications**: 
+  - Notifikasi ke user saat tiket diambil agent (tanpa tombol balas)
+  - Notifikasi ke grup Telegram saat tiket diambil agent
+- **Completion Notifications**: 
+  - Notifikasi ke user saat tiket selesai (RESOLVED)
+  - Notifikasi ke grup Telegram saat tiket selesai
+- **Group Telegram Notifications**: Semua aktivitas penting dikirim ke grup monitoring
 - **Template System**: 40+ template berbeda untuk kombinasi category + permintaan
-- **Multi-Category Support**: HSI Indibiz, WMS, BITSTREAM, VULA, ASTINET, METRO-E, dll
+- **Multi-Category Support**: HSI Indibiz, WMS, BITSTREAM, VULA, ASTINET, METRO-E, QC2, LEPAS BI, dll
 
 ### 🌐 UI & Experience
 - **Real-time Updates**: Status tiket dan komentar terupdate secara real-time
