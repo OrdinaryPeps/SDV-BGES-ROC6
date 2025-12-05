@@ -114,6 +114,20 @@ export default function UserManagementPage({ user }) {
     }
   };
 
+  const handleDeleteAdmin = async (adminId, adminUsername) => {
+    if (!window.confirm(`Are you sure you want to delete admin "${adminUsername}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/users/${adminId}`);
+      toast.success(`Admin ${adminUsername} deleted successfully`);
+      fetchAdmins();
+    } catch (error) {
+      toast.error('Failed to delete admin');
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
@@ -278,6 +292,14 @@ export default function UserManagementPage({ user }) {
                           </div>
                         </DialogContent>
                       </Dialog>
+                      <Button
+                        onClick={() => handleDeleteAdmin(admin.id, admin.username)}
+                        variant="destructive"
+                        className="gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
