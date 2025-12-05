@@ -216,6 +216,100 @@ bot.command('admin', async (ctx) => {
     );
 });
 
+// Command: /lapor - Shortcut untuk buat laporan baru
+bot.command('lapor', async (ctx) => {
+    logAction(ctx, 'Command /lapor');
+    const fullName = ctx.from.first_name + (ctx.from.last_name ? ' ' + ctx.from.last_name : '');
+    const userId = ctx.from.id;
+    await setUserState(userId, { step: 'mainMenu' });
+
+    await ctx.reply(
+        `Hi ${fullName}, silahkan pilih kategori produk untuk membuat laporan:`,
+        Markup.inlineKeyboard(
+            mainMenuButtons.map(row => row.map(text => Markup.button.callback(text, `main_${text}`)))
+        )
+    );
+});
+
+// Command: /status - Cek status tiket user
+bot.command('status', async (ctx) => {
+    logAction(ctx, 'Command /status');
+    const usernameTelegram = ctx.from.username ? `@${ctx.from.username}` : '';
+
+    if (!usernameTelegram) {
+        return ctx.reply('Anda perlu memiliki username Telegram untuk menggunakan fitur ini.');
+    }
+
+    try {
+        const result = await apiRequest('GET', '/tickets', null, ADMIN_IDS[0]);
+        if (result.success) {
+            const userTickets = result.data.filter(t =>
+                t.user_telegram_name?.toLowerCase() === usernameTelegram.toLowerCase()
+            );
+
+            if (userTickets.length === 0) {
+                return ctx.reply('Anda belum memiliki tiket. Ketik /lapor untuk membuat laporan baru.');
+            }
+
+            const activeTickets = userTickets.filter(t => t.status !== 'completed');
+            const completedTickets = userTickets.filter(t => t.status === 'completed').slice(0, 5);
+
+            let message = '*📋 Status Tiket Anda*\n\n';
+
+            if (activeTickets.length > 0) {
+                message += '*Tiket Aktif:*\n';
+                activeTickets.forEach(t => {
+                    const status = t.status === 'in_progress' ? '🔵 In Progress' : '🟡 Pending';
+                    message += `• ${t.ticket_number} - ${status}\n`;
+                });
+                message += '\n';
+            }
+
+            if (completedTickets.length > 0) {
+                message += '*Tiket Selesai (5 terakhir):*\n';
+                completedTickets.forEach(t => {
+                    message += `• ${t.ticket_number} - ✅ Resolved\n`;
+                });
+            }
+
+            await ctx.reply(message, { parse_mode: 'Markdown' });
+        }
+    } catch (error) {
+        logError(`Error fetching tickets: ${error}`);
+        await ctx.reply('Terjadi kesalahan saat mengambil data tiket.');
+    }
+});
+
+// Command: /bantuan - Panduan penggunaan bot
+bot.command('bantuan', async (ctx) => {
+    logAction(ctx, 'Command /bantuan');
+    const helpText = `
+*📖 Panduan Penggunaan Bot*
+
+*Perintah Tersedia:*
+/start - Mulai bot dan lihat menu utama
+/lapor - Buat laporan/tiket baru
+/status - Cek status tiket Anda
+/bantuan - Lihat panduan ini
+
+*Cara Membuat Laporan:*
+1. Ketik /start atau /lapor
+2. Pilih kategori produk
+3. Isi data yang diminta
+4. Tiket akan dibuat dan dikirim ke Helpdesk
+
+*Status Tiket:*
+🟡 Pending - Menunggu diambil agent
+🔵 In Progress - Sedang dikerjakan
+✅ Resolved - Sudah selesai
+
+*Butuh bantuan lebih lanjut?*
+Hubungi admin atau kirim pesan di grup support.
+    `.trim();
+
+    await ctx.reply(helpText, { parse_mode: 'Markdown' });
+});
+
 bot.action('admin_tool', async (ctx) => {
     if (!ADMIN_IDS.includes(ctx.from.id)) return ctx.answerCbQuery('Anda bukan admin.');
     const fullName = ctx.from.first_name + (ctx.from.last_name ? ' ' + ctx.from.last_name : '');
@@ -1092,9 +1186,27 @@ bot.action(/^reply_ticket_(.+)/, async (ctx) => {
     }
 });
 
+// ========== BOT COMMANDS SETUP ==========
+async function setupBotCommands() {
+    const commands = [
+        { command: 'start', description: 'Mulai bot dan lihat menu utama' },
+        { command: 'lapor', description: 'Buat laporan/tiket baru' },
+        { command: 'status', description: 'Cek status tiket saya' },
+        { command: 'bantuan', description: 'Lihat panduan penggunaan bot' }
+    ];
+
+    try {
+        await bot.telegram.setMyCommands(commands);
+        logSuccess('Bot commands berhasil di-setup');
+    } catch (error) {
+        logError(`Gagal setup commands: ${error}`);
+    }
+}
+
 // Start the bot
-bot.launch().then(() => {
+bot.launch().then(async () => {
     logSuccess('Bot Telegram Berjalan...');
+    await setupBotCommands();
 }).catch((err) => {
     logError(`Gagal menjalankan bot: ${err}`);
 });
