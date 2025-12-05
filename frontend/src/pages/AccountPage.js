@@ -6,15 +6,20 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Shield } from 'lucide-react';
+import { User, Lock, Shield, Pencil, Save, X } from 'lucide-react';
 
-export default function AccountPage({ user }) {
+export default function AccountPage({ user, onProfileUpdate }) {
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const [profileData, setProfileData] = useState({
+    full_name: user.full_name || '',
+    username: user.username
+  });
   const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -49,6 +54,55 @@ export default function AccountPage({ user }) {
     }
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+
+    // Validate username
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(profileData.username)) {
+      toast.error('Username hanya boleh huruf, angka, dan underscore (_)');
+      return;
+    }
+
+    if (profileData.username.length < 3) {
+      toast.error('Username minimal 3 karakter');
+      return;
+    }
+
+    if (profileData.full_name.length < 2) {
+      toast.error('Nama minimal 2 karakter');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.put(`${API}/users/update-profile`, {
+        full_name: profileData.full_name,
+        username: profileData.username
+      });
+
+      toast.success('Profil berhasil diperbarui!');
+      setEditMode(false);
+
+      // Update user in parent component if callback provided
+      if (onProfileUpdate && response.data.user) {
+        onProfileUpdate(response.data.user);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal memperbarui profil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setProfileData({
+      full_name: user.full_name || '',
+      username: user.username
+    });
+    setEditMode(false);
+  };
+
   return (
     <div className="space-y-6" data-testid="account-page">
       <div>
@@ -59,46 +113,92 @@ export default function AccountPage({ user }) {
       {/* Profile Info Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Informasi Profil
-          </CardTitle>
-          <CardDescription>Detail akun Anda</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Informasi Profil
+              </CardTitle>
+              <CardDescription>Detail akun Anda</CardDescription>
+            </div>
+            {!editMode && (
+              <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">
-                {user.username.substring(0, 2).toUpperCase()}
+          {editMode ? (
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-fullname">Nama Lengkap</Label>
+                <Input
+                  id="edit-fullname"
+                  value={profileData.full_name}
+                  onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                  placeholder="Masukkan nama lengkap"
+                  required
+                />
               </div>
-              <div>
-                <p className="text-lg font-semibold text-slate-900">{user.username}</p>
-                <p className="text-sm text-slate-500 capitalize flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  {user.role}
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="edit-username">Username</Label>
+                <Input
+                  id="edit-username"
+                  value={profileData.username}
+                  onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
+                  placeholder="Masukkan username (huruf, angka, underscore)"
+                  required
+                />
+                <p className="text-xs text-slate-500">Hanya boleh huruf, angka, dan underscore (_)</p>
               </div>
-            </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loading}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {loading ? 'Menyimpan...' : 'Simpan'}
+                </Button>
+                <Button type="button" variant="outline" onClick={cancelEdit}>
+                  <X className="w-4 h-4 mr-2" />
+                  Batal
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-2xl">
+                  {user.username.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-slate-900">{user.full_name || user.username}</p>
+                  <p className="text-sm text-slate-500 capitalize flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    {user.role}
+                  </p>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-              <div>
-                <Label className="text-sm text-slate-500">Username</Label>
-                <p className="text-slate-900 font-medium mt-1">{user.username}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-slate-500">Role</Label>
-                <p className="text-slate-900 font-medium mt-1 capitalize">{user.role}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-slate-500">Status</Label>
-                <p className="text-slate-900 font-medium mt-1 capitalize">{user.status}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-slate-500">Account ID</Label>
-                <p className="text-slate-900 font-medium mt-1 text-xs">{user.id.substring(0, 16)}...</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <Label className="text-sm text-slate-500">Nama Lengkap</Label>
+                  <p className="text-slate-900 font-medium mt-1">{user.full_name || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Username</Label>
+                  <p className="text-slate-900 font-medium mt-1">{user.username}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Role</Label>
+                  <p className="text-slate-900 font-medium mt-1 capitalize">{user.role}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Status</Label>
+                  <p className="text-slate-900 font-medium mt-1 capitalize">{user.status}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

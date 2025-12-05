@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
+import re
 from ..core.database import get_db
 from ..core.deps import get_current_user, is_admin_role, ADMIN_ROLES
 from ..core.security import get_password_hash
@@ -11,6 +12,10 @@ router = APIRouter()
 
 class ResetPasswordRequest(BaseModel):
     new_password: str
+
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    username: Optional[str] = None
 
 @router.get("/pending", response_model=List[User])
 async def get_pending_users(current_user: User = Depends(get_current_user), db = Depends(get_db)):
@@ -98,3 +103,52 @@ async def reset_password(user_id: str, request: ResetPasswordRequest, current_us
             raise HTTPException(status_code=404, detail="User tidak ditemukan")
     
     return {"message": "Password berhasil direset"}
+
+@router.put("/update-profile")
+async def update_profile(
+    request: UpdateProfileRequest, 
+    current_user: User = Depends(get_current_user), 
+    db = Depends(get_db)
+):
+    update_data = {}
+    
+    # Validate and update full_name
+    if request.full_name is not None:
+        if len(request.full_name.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Nama minimal 2 karakter")
+        update_data["full_name"] = request.full_name.strip()
+    
+    # Validate and update username
+    if request.username is not None:
+        username = request.username.strip()
+        
+        # Validate username format
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            raise HTTPException(status_code=400, detail="Username hanya boleh huruf, angka, dan underscore (_)")
+        
+        if len(username) < 3:
+            raise HTTPException(status_code=400, detail="Username minimal 3 karakter")
+        
+        # Check if username already exists (exclude current user)
+        existing = await db.users.find_one({"username": username, "id": {"$ne": current_user.id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Username sudah digunakan")
+        
+        update_data["username"] = username
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Tidak ada data yang diubah")
+    
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Gagal memperbarui profil")
+    
+    # Get updated user data
+    updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "password_hash": 0})
+    logger.info(f"User {current_user.id} updated profile: {update_data.keys()}")
+    
+    return {"message": "Profil berhasil diperbarui", "user": updated_user}
