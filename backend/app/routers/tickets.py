@@ -328,7 +328,7 @@ async def add_bot_comment(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role not in ["admin", "agent"]:
+    if not is_admin_role(current_user.role) and current_user.role != "agent":
         raise HTTPException(status_code=403, detail="Hak akses admin/agent diperlukan")
     
     ticket = await db.tickets.find_one({"ticket_number": comment_data.ticket_number})
