@@ -27,6 +27,21 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
+// Axios interceptor for server errors - redirect to error page
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // If server returns 500+ error or network error (backend down)
+    if (error.response?.status >= 500 || error.code === 'ERR_NETWORK') {
+      // Only redirect if not already on error page
+      if (!window.location.pathname.includes('50x.html')) {
+        window.location.href = '/50x.html';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
