@@ -310,7 +310,8 @@ bot.command('bantuan', async (ctx) => {
 4. Tiket akan dibuat dan dikirim ke Helpdesk
 
 *Status Tiket:*
-🟡 Pending - Menunggu diambil agent
+🟢 Open - Tiket baru, menunggu agent
+🟡 Pending - Menunggu konfirmasi
 🔵 In Progress - Sedang dikerjakan
 ✅ Resolved - Sudah selesai
 
