@@ -39,7 +39,6 @@ export default function DashboardPage({ user }) {
   const [loadingByProduct, setLoadingByProduct] = useState(false);
 
   useEffect(() => {
-    console.log('DashboardPage v0.1.3 loaded');
     fetchStats();
     if (user.role === 'admin') {
       fetchAgents();
@@ -96,7 +95,6 @@ export default function DashboardPage({ user }) {
   const fetchAgents = async () => {
     try {
       const response = await axios.get(`${API}/users/agents`);
-      console.log('Agents response:', response.data);
       if (Array.isArray(response.data)) {
         setAgents(response.data);
       } else {
@@ -272,7 +270,6 @@ export default function DashboardPage({ user }) {
       } catch (err) {
         console.error('Error generating filename:', err);
       }
-      console.log('Final filename:', filename);
 
       link.setAttribute('download', filename);
       document.body.appendChild(link);

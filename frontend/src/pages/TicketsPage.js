@@ -51,7 +51,6 @@ export default function TicketsPage({ user }) {
     const ws = new WebSocket(`${wsUrl}?token=${token}`);
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
       // Send ping every 30s to keep connection alive
       setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -100,7 +99,6 @@ export default function TicketsPage({ user }) {
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
     };
 
     wsRef.current = ws;
@@ -123,13 +121,11 @@ export default function TicketsPage({ user }) {
         params.start_date = today.toISOString();
       }
 
-      console.log('Fetching tickets from:', `${API}/tickets/`, 'Params:', params);
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API}/tickets/`, {
         params,
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Tickets response data:', response.data);
       setTickets(response.data);
     } catch (error) {
       console.error('Fetch tickets error:', error);

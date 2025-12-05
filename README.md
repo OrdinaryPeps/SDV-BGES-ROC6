@@ -242,6 +242,19 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 
 ## Recent Updates (December 2025)
 
+### 🔐 Security Hardening (NEW)
+- ✅ **Rate Limiting**: Login (5/min), Register (3/min) untuk mencegah brute force
+- ✅ **Debug Files Removed**: Hapus file debug yang berisi kredensial
+- ✅ **Console.log Removed**: Hapus semua console.log dari frontend untuk keamanan
+- ✅ **JWT Token**: 24 jam session expiry
+
+### 🔍 New Features
+- ✅ **Ticket Search**: Fitur pencarian tiket di halaman Tickets
+  - Cari berdasarkan: ticket number, description, category, permintaan, user, agent, WONUM, ND
+  - Real-time filtering dengan hasil pencarian
+- ✅ **Bot Menu Commands**: /start, /lapor, /status, /bantuan
+- ✅ **Telegram Service Resilience**: Connection pooling, retry logic, timeout handling
+
 ### Two-Way Communication
 - ✅ Users can now reply to agent messages via Telegram bot
 - ✅ Inline "Reply" buttons in Telegram notifications
@@ -267,6 +280,7 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - ✅ Redis caching for dashboard statistics
 - ✅ Debounced filter auto-reload (500ms)
 - ✅ WebSocket connection health monitoring
+- ✅ Telegram HTTP client connection pooling
 
 ## Contributing
 
