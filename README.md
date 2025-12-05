@@ -248,6 +248,20 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - ✅ **Console.log Removed**: Hapus semua console.log dari frontend untuk keamanan
 - ✅ **JWT Token**: 24 jam session expiry
 
+### 👨‍💻 Developer Role (December 5, 2025)
+- ✅ **Developer**: Role dengan kapasitas sama seperti admin
+  - Akses penuh ke Dashboard, Tickets, User Management
+  - Dapat approve/reject user, reset password, delete user
+  - Terpisah dari admin untuk audit trail
+- ✅ **Admin List Management**: 
+  - Developer dapat melihat semua admin di User Management
+  - Admin biasa hanya melihat admin lain (tidak termasuk developer)
+  - Delete button untuk admin users
+- ✅ **Custom 500 Error Page**: 
+  - Halaman error dengan ilustrasi animasi (gear & wrench)
+  - Design matching dengan dashboard
+  - Pesan user-friendly dalam Bahasa Indonesia
+
 ### 🔍 New Features
 - ✅ **Ticket Search**: Fitur pencarian tiket di halaman Tickets
   - Cari berdasarkan: ticket number, description, category, permintaan, user, agent, WONUM, ND
