@@ -768,7 +768,7 @@ export default function DashboardPage({ user }) {
                       <SelectItem value="all">All Agents</SelectItem>
                       {Array.isArray(agents) && agents.map(agent => (
                         <SelectItem key={agent.id} value={agent.id}>
-                          {agent.username}
+                          {agent.full_name || agent.username}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API } from '../App';
+import { API, isAdminRole } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -165,7 +165,7 @@ export default function TicketDetailPage({ user }) {
           <ArrowLeft className="w-4 h-4" />
           Back to Tickets
         </Button>
-        {user.role === 'admin' && (
+        {isAdminRole(user.role) && (
           <Button
             variant="destructive"
             onClick={handleDeleteTicket}
