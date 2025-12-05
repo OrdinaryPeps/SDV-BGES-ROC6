@@ -10,7 +10,7 @@ import string
 
 from ..core.database import get_db, get_redis
 from ..core.config import settings
-from ..core.deps import get_current_user
+from ..core.deps import get_current_user, is_admin_role
 from ..models.user import User
 from ..models.ticket import Ticket, TicketCreate, TicketUpdate
 from ..models.comment import Comment, CommentCreate, CommentCreateBot
@@ -255,7 +255,7 @@ async def update_ticket(
 
 @router.delete("/{ticket_id}")
 async def delete_ticket(ticket_id: str, current_user: User = Depends(get_current_user), db = Depends(get_db), redis = Depends(get_redis)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
         
     result = await db.tickets.delete_one({"id": ticket_id})

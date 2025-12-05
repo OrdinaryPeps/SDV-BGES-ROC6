@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 export default function UserManagementPage({ user }) {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [agents, setAgents] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resetPasswordDialog, setResetPasswordDialog] = useState(null);
   const [newPassword, setNewPassword] = useState('');
@@ -28,6 +29,7 @@ export default function UserManagementPage({ user }) {
   useEffect(() => {
     fetchPendingUsers();
     fetchAgents();
+    fetchAdmins();
   }, []);
 
   const fetchPendingUsers = async () => {
@@ -47,6 +49,15 @@ export default function UserManagementPage({ user }) {
       setAgents(response.data);
     } catch (error) {
       console.error('Failed to fetch agents');
+    }
+  };
+
+  const fetchAdmins = async () => {
+    try {
+      const response = await axios.get(`${API}/users/admins`);
+      setAdmins(response.data);
+    } catch (error) {
+      console.error('Failed to fetch admins');
     }
   };
 
@@ -183,6 +194,98 @@ export default function UserManagementPage({ user }) {
           </div>
         )}
       </div>
+
+      {/* Admin List */}
+      {admins.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">Admin List</h2>
+          <div className="grid gap-4">
+            {admins.map((admin) => (
+              <Card key={admin.id} data-testid={`admin-${admin.username}`}>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        {admin.username.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {admin.full_name || admin.username}
+                          {admin.full_name && <span className="text-sm font-normal text-slate-500 ml-2">({admin.username})</span>}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <Badge className="bg-purple-100 text-purple-700 capitalize">
+                            {admin.role}
+                          </Badge>
+                          <Badge className="bg-green-100 text-green-700">
+                            {admin.status}
+                          </Badge>
+                          <span className="text-sm text-slate-500">
+                            Since: {format(new Date(admin.created_at), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
+                      <Dialog open={resetPasswordDialog === admin.id} onOpenChange={(open) => {
+                        if (!open) {
+                          setResetPasswordDialog(null);
+                          setNewPassword('');
+                        }
+                      }}>
+                        <DialogTrigger asChild>
+                          <Button
+                            onClick={() => setResetPasswordDialog(admin.id)}
+                            variant="outline"
+                            className="gap-2"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                            Reset Password
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Reset Password for {admin.username}</DialogTitle>
+                            <DialogDescription>
+                              Enter a new password for this admin.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="new-password-admin">New Password</Label>
+                              <Input
+                                id="new-password-admin"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Enter new password (min. 6 characters)"
+                              />
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setResetPasswordDialog(null);
+                                  setNewPassword('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button onClick={handleResetPassword}>
+                                Reset Password
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Agent List with Reset Password */}
       <div>

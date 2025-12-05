@@ -4,7 +4,7 @@ import csv
 import io
 from datetime import datetime, timezone
 from ..core.database import get_db
-from ..core.deps import get_current_user
+from ..core.deps import get_current_user, is_admin_role
 from ..models.user import User
 from .performance import filter_tickets
 
@@ -16,7 +16,7 @@ async def export_tickets(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
         
     tickets = await db.tickets.find({}, {"_id": 0}).to_list(10000)
@@ -57,7 +57,7 @@ async def export_performance(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
         
     tickets = await db.tickets.find({}).to_list(10000)

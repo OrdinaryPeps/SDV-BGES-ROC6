@@ -15,6 +15,9 @@ import "./App.css";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://roc-6-sdv-bges.site";
 export const API = `${BACKEND_URL}/api`;
 
+// Admin-level roles (both admin and developer have full access)
+export const isAdminRole = (role) => ["admin", "developer"].includes(role);
+
 // Axios interceptor for auth
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -130,7 +133,7 @@ function App() {
           <Route
             path="/users"
             element={
-              user && user.role === "admin" ? (
+              user && isAdminRole(user.role) ? (
                 <Layout user={user} onLogout={handleLogout}>
                   <UserManagementPage user={user} />
                 </Layout>

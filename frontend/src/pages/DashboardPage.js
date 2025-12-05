@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API } from '../App';
+import { API, isAdminRole } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Ticket, Clock, CheckCircle, AlertCircle, TrendingUp, Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,7 +40,7 @@ export default function DashboardPage({ user }) {
 
   useEffect(() => {
     fetchStats();
-    if (user.role === 'admin') {
+    if (isAdminRole(user.role)) {
       fetchAgents();
       fetchCategories();
       fetchYears();
@@ -49,7 +49,7 @@ export default function DashboardPage({ user }) {
 
   // Auto-load performance data on mount (with current year/month defaults)
   useEffect(() => {
-    if (user.role === 'admin' && !hasInitialLoad) {
+    if (isAdminRole(user.role) && !hasInitialLoad) {
       // Delay initial load to ensure filters are set
       const timer = setTimeout(() => {
         handleLoadReport();
@@ -61,7 +61,7 @@ export default function DashboardPage({ user }) {
 
   // Auto-reload when filters change (with debounce)
   useEffect(() => {
-    if (user.role === 'admin' && hasInitialLoad) {
+    if (isAdminRole(user.role) && hasInitialLoad) {
       const timer = setTimeout(() => {
         handleLoadReport();
       }, 500); // 500ms debounce
@@ -77,7 +77,7 @@ export default function DashboardPage({ user }) {
 
   const fetchStats = async () => {
     try {
-      if (user.role === 'admin') {
+      if (isAdminRole(user.role)) {
         const response = await axios.get(`${API}/statistics/admin-dashboard`);
         setStats(response.data);
       } else {
@@ -499,7 +499,7 @@ export default function DashboardPage({ user }) {
           <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">Ringkasan sistem manajemen tiket</p>
         </div>
-        {user.role === 'admin' && (
+        {isAdminRole(user.role) && (
           <div className="flex gap-2">
             {/* Export buttons removed as per request */}
           </div>

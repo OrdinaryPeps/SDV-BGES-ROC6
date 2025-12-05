@@ -7,6 +7,13 @@ from ..models.user import User
 
 security = HTTPBearer()
 
+# Admin-level roles (both admin and developer have full access)
+ADMIN_ROLES = ["admin", "developer"]
+
+def is_admin_role(role: str) -> bool:
+    """Check if role has admin-level privileges"""
+    return role in ADMIN_ROLES
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db = Depends(get_db)
@@ -30,3 +37,4 @@ async def get_current_user(
         raise credentials_exception
         
     return User(**user)
+

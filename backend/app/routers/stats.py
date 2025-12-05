@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone
 import json
 from ..core.database import get_db, get_redis
-from ..core.deps import get_current_user
+from ..core.deps import get_current_user, is_admin_role
 from ..models.user import User
 from ..core.logging import logger
 
@@ -19,7 +19,7 @@ def parse_datetime(dt):
 
 @router.get("/admin-dashboard")
 async def get_admin_dashboard(current_user: User = Depends(get_current_user), db = Depends(get_db), redis = Depends(get_redis)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     cache_key = "dashboard:admin:stats:v2"
@@ -162,7 +162,7 @@ async def get_agent_dashboard(agent_id: str, current_user: User = Depends(get_cu
 
 @router.get("/performance/by-agent")
 async def get_performance_by_agent(current_user: User = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     tickets = await db.tickets.find({"status": "completed"}).to_list(10000)
@@ -196,7 +196,7 @@ async def get_performance_by_agent(current_user: User = Depends(get_current_user
 
 @router.get("/performance/by-product")
 async def get_performance_by_product(current_user: User = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
         
     tickets = await db.tickets.find({}).to_list(10000)

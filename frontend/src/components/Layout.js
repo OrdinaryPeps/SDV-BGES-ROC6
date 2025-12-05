@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Ticket, TrendingUp, Users, LogOut, UserCog, Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { isAdminRole } from '../App';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,7 +58,7 @@ export default function Layout({ user, onLogout, children }) {
         </Link>
       )}
 
-      {user.role === 'admin' && (
+      {isAdminRole(user.role) && (
         <Link
           to="/users"
           data-testid="nav-users"

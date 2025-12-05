@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 import json
 from ..core.database import get_db
-from ..core.deps import get_current_user
+from ..core.deps import get_current_user, is_admin_role
 from ..models.user import User
 from ..core.logging import logger
 
@@ -41,7 +41,7 @@ async def get_performance_table_data(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     tickets = await db.tickets.find({}).to_list(10000)
@@ -137,7 +137,7 @@ async def get_performance_by_agent(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     # Get all tickets, not just completed ones, to show workload
@@ -195,7 +195,7 @@ async def get_performance_by_product(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Admin access required")
         
     tickets = await db.tickets.find({}).to_list(10000)

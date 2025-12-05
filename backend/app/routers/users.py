@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from pydantic import BaseModel
 from ..core.database import get_db
-from ..core.deps import get_current_user
+from ..core.deps import get_current_user, is_admin_role, ADMIN_ROLES
 from ..core.security import get_password_hash
 from ..models.user import User
 from ..core.logging import logger
@@ -14,7 +14,7 @@ class ResetPasswordRequest(BaseModel):
 
 @router.get("/pending", response_model=List[User])
 async def get_pending_users(current_user: User = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     users = await db.users.find({"status": "pending"}, {"_id": 0}).to_list(1000)
@@ -27,6 +27,22 @@ async def get_agents(current_user: User = Depends(get_current_user), db = Depend
     users = await db.users.find({"role": "agent", "status": "approved"}, {"_id": 0}).to_list(1000)
     return [User(**u) for u in users]
 
+@router.get("/admins", response_model=List[User])
+async def get_admins(current_user: User = Depends(get_current_user), db = Depends(get_db)):
+    if not is_admin_role(current_user.role):
+        raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
+    
+    # Get all admin-level users (admin + developer)
+    query = {"role": {"$in": ADMIN_ROLES}, "status": "approved"}
+    
+    # If NOT developer role, exclude developer users from the list
+    if current_user.role != "developer":
+        query["role"] = "admin"  # Admin only sees other admins, not developer
+    
+    users = await db.users.find(query, {"_id": 0}).to_list(1000)
+    return [User(**u) for u in users]
+
+
 @router.put("/{user_id}/approve")
 async def approve_user(
     user_id: str, 
@@ -34,7 +50,7 @@ async def approve_user(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     if role not in ["agent", "admin"]:
@@ -54,7 +70,7 @@ async def approve_user(
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     result = await db.users.delete_one({"id": user_id})
@@ -66,7 +82,7 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
 
 @router.put("/{user_id}/reset-password")
 async def reset_password(user_id: str, request: ResetPasswordRequest, current_user: User = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.role != "admin":
+    if not is_admin_role(current_user.role):
         raise HTTPException(status_code=403, detail="Hak akses admin diperlukan")
     
     hashed_password = get_password_hash(request.new_password)
