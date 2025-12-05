@@ -7,10 +7,11 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Clock, User, Tag, MessageCircle, Filter } from 'lucide-react';
+import { Clock, User, Tag, MessageCircle, Filter, Search, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
 
 export default function TicketsPage({ user }) {
   const [tickets, setTickets] = useState([]);
@@ -19,6 +20,7 @@ export default function TicketsPage({ user }) {
   const [activeTab, setActiveTab] = useState(user.role === 'agent' ? 'in_progress' : 'all');
   const [todayOnly, setTodayOnly] = useState(false);
   const [unreadTickets, setUnreadTickets] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const wsRef = useRef(null);
 
@@ -202,13 +204,33 @@ export default function TicketsPage({ user }) {
     return variants[status] || 'bg-slate-100 text-slate-700';
   };
 
+  // Filter tickets by search query
+  const filterTickets = (ticketList) => {
+    if (!searchQuery.trim()) return ticketList;
+
+    const query = searchQuery.toLowerCase().trim();
+    return ticketList.filter(ticket =>
+      ticket.ticket_number?.toLowerCase().includes(query) ||
+      ticket.description?.toLowerCase().includes(query) ||
+      ticket.category?.toLowerCase().includes(query) ||
+      ticket.permintaan?.toLowerCase().includes(query) ||
+      ticket.user_telegram_name?.toLowerCase().includes(query) ||
+      ticket.assigned_agent_name?.toLowerCase().includes(query) ||
+      ticket.wonum?.toLowerCase().includes(query) ||
+      ticket.nd_internet_voice?.toLowerCase().includes(query)
+    );
+  };
+
+  const filteredTickets = filterTickets(tickets);
+
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
 
+
   return (
     <div className="space-y-6" data-testid="tickets-page">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Tickets</h1>
           <p className="text-slate-500 mt-1">
@@ -216,19 +238,49 @@ export default function TicketsPage({ user }) {
           </p>
         </div>
 
-        {/* Today Filter Toggle */}
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="today-filter"
-            checked={todayOnly}
-            onCheckedChange={setTodayOnly}
-          />
-          <Label htmlFor="today-filter" className="flex items-center gap-2 cursor-pointer">
-            <Filter className="w-4 h-4" />
-            Hari Ini Saja
-          </Label>
+        {/* Search and Filter Row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Cari tiket..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 w-full sm:w-64"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Today Filter Toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="today-filter"
+              checked={todayOnly}
+              onCheckedChange={setTodayOnly}
+            />
+            <Label htmlFor="today-filter" className="flex items-center gap-2 cursor-pointer">
+              <Filter className="w-4 h-4" />
+              Hari Ini Saja
+            </Label>
+          </div>
         </div>
       </div>
+
+      {/* Search Results Count */}
+      {searchQuery && (
+        <div className="text-sm text-slate-600">
+          Ditemukan <span className="font-semibold">{filteredTickets.length}</span> tiket untuk "{searchQuery}"
+        </div>
+      )}
 
       {/* Available Tickets for Agent to Claim */}
       {user.role === 'agent' && openTickets.length > 0 && (
@@ -313,15 +365,17 @@ export default function TicketsPage({ user }) {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
-          {tickets.length === 0 ? (
+          {filteredTickets.length === 0 ? (
             <Card>
               <CardContent className="py-12">
-                <p className="text-center text-slate-500">No tickets found</p>
+                <p className="text-center text-slate-500">
+                  {searchQuery ? `Tidak ada tiket yang cocok dengan "${searchQuery}"` : 'No tickets found'}
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <Card
                   key={ticket.id}
                   className="hover:shadow-lg transition-shadow cursor-pointer relative"
