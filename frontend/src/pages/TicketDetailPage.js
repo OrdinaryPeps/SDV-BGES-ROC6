@@ -36,6 +36,15 @@ export default function TicketDetailPage({ user }) {
     }
   }, [ticketId]);
 
+  // Auto-refresh comments every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchComments();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [ticketId]);
+
   const fetchTicket = async () => {
     try {
       const response = await axios.get(`${API}/tickets/${ticketId}`);
