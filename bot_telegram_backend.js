@@ -264,8 +264,11 @@ bot.command('status', async (ctx) => {
             if (activeTickets.length > 0) {
                 message += '*Tiket Aktif:*\n';
                 activeTickets.forEach(t => {
-                    const status = t.status === 'in_progress' ? '🔵 In Progress' : '🟡 Pending';
-                    message += `• ${t.ticket_number} - ${status}\n`;
+                    let statusIcon = '🟡 Pending';
+                    if (t.status === 'in_progress') statusIcon = '🔵 In Progress';
+                    else if (t.status === 'open') statusIcon = '🟢 Open';
+                    else if (t.status === 'pending') statusIcon = '🟡 Pending';
+                    message += `• ${t.ticket_number} - ${statusIcon}\n`;
                 });
                 message += '\n';
             }
