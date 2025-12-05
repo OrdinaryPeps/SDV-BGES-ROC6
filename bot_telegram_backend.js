@@ -237,7 +237,7 @@ bot.command('status', async (ctx) => {
     const usernameTelegram = ctx.from.username ? `@${ctx.from.username}` : '';
 
     if (!usernameTelegram) {
-        return ctx.reply('Anda perlu memiliki username Telegram untuk menggunakan fitur ini.');
+        return ctx.reply('❌ Anda perlu memiliki username Telegram untuk menggunakan fitur ini.');
     }
 
     try {
@@ -248,7 +248,12 @@ bot.command('status', async (ctx) => {
             );
 
             if (userTickets.length === 0) {
-                return ctx.reply('Anda belum memiliki tiket. Ketik /lapor untuk membuat laporan baru.');
+                return ctx.reply(
+                    '📋 *Status Tiket Anda*\n\n' +
+                    'Anda belum memiliki tiket.\n' +
+                    'Pilih menu /lapor atau /start untuk membuat laporan baru.',
+                    { parse_mode: 'Markdown' }
+                );
             }
 
             const activeTickets = userTickets.filter(t => t.status !== 'completed');
@@ -273,10 +278,13 @@ bot.command('status', async (ctx) => {
             }
 
             await ctx.reply(message, { parse_mode: 'Markdown' });
+        } else {
+            // API returned error
+            await ctx.reply('❌ Gagal mengambil data tiket. Silakan coba lagi nanti.');
         }
     } catch (error) {
         logError(`Error fetching tickets: ${error}`);
-        await ctx.reply('Terjadi kesalahan saat mengambil data tiket.');
+        await ctx.reply('❌ Terjadi kesalahan saat mengambil data tiket. Silakan coba lagi nanti.');
     }
 });
 
