@@ -30,6 +30,14 @@ export default function LoginPage({ onLogin }) {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    // Validate username - only alphanumeric and underscore
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(registerData.username)) {
+      toast.error('Username hanya boleh huruf, angka, dan underscore (_). Tidak boleh ada spasi atau simbol lain.');
+      return;
+    }
+
     if (registerData.password !== registerData.confirmPassword) {
       toast.error('Passwords do not match');
       return;

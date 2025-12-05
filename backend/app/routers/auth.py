@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Request
 from datetime import timedelta
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import re
 from ..core.security import create_access_token, get_password_hash, verify_password
 from ..core.config import settings
 from ..core.database import get_db
@@ -14,6 +15,10 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/register", response_model=User)
 @limiter.limit("3/minute")  # Prevent spam registration
 async def register(request: Request, user_data: UserCreate, db = Depends(get_db)):
+    # Validate username - only alphanumeric and underscore
+    if not re.match(r'^[a-zA-Z0-9_]+$', user_data.username):
+        raise HTTPException(status_code=400, detail="Username hanya boleh huruf, angka, dan underscore (_)")
+    
     # Check if username exists
     existing_user = await db.users.find_one({"username": user_data.username})
     if existing_user:
