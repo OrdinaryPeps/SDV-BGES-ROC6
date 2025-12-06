@@ -387,6 +387,7 @@ export default function TicketDetailPage({ user }) {
                       </span>
                     </div>
                     <p className="text-slate-700">{comment.comment}</p>
+                    {/* New format: images array */}
                     {comment.images && comment.images.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {comment.images.map((img, idx) => (
@@ -405,6 +406,24 @@ export default function TicketDetailPage({ user }) {
                             />
                           </a>
                         ))}
+                      </div>
+                    )}
+                    {/* Old format: single image_url (backwards compatibility) */}
+                    {!comment.images && comment.thumbnail_url && comment.thumbnail_url.trim() !== '' && (
+                      <div className="mt-2">
+                        <a
+                          href={`${API}${comment.image_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block"
+                        >
+                          <img
+                            src={`${API}${comment.thumbnail_url}`}
+                            alt="Attachment"
+                            className="max-w-[150px] rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </a>
                       </div>
                     )}
                   </div>
