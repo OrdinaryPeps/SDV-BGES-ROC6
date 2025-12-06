@@ -76,11 +76,12 @@ export default function TicketsPage({ user }) {
 
     ws.onopen = () => {
       // Send ping every 30s to keep connection alive
-      setInterval(() => {
+      const pingInterval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send('ping');
         }
       }, 30000);
+      ws.pingInterval = pingInterval;
     };
 
     ws.onmessage = (event) => {
@@ -131,6 +132,9 @@ export default function TicketsPage({ user }) {
 
     return () => {
       if (wsRef.current) {
+        if (wsRef.current.pingInterval) {
+          clearInterval(wsRef.current.pingInterval);
+        }
         wsRef.current.close();
       }
     };

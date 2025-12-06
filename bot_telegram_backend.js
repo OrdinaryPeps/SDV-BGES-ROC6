@@ -96,7 +96,8 @@ async function apiRequest(method, endpoint, data = null, userId = null) {
         const config = {
             method,
             url: `${API_URL}${endpoint}`,
-            headers: {}
+            headers: {},
+            timeout: 10000  // 10 second timeout
         };
 
         if (userId && ADMIN_IDS.includes(userId)) {
