@@ -27,8 +27,8 @@ export default function TicketDetailPage({ user }) {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [agents, setAgents] = useState([]);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef(null);;
 
@@ -113,22 +113,25 @@ export default function TicketDetailPage({ user }) {
 
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!newComment.trim() && !imageFile) return;
+    if (!newComment.trim() && imageFiles.length === 0) return;
 
-    let imageUrl = null;
-    let thumbnailUrl = null;
+    let uploadedImages = [];
 
-    // Upload image first if exists
-    if (imageFile) {
+    // Upload all images first
+    if (imageFiles.length > 0) {
       setUploadingImage(true);
       try {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        const uploadRes = await axios.post(`${API}/uploads/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        imageUrl = uploadRes.data.original_url;
-        thumbnailUrl = uploadRes.data.thumbnail_url;
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          const uploadRes = await axios.post(`${API}/uploads/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedImages.push({
+            image_url: uploadRes.data.original_url,
+            thumbnail_url: uploadRes.data.thumbnail_url
+          });
+        }
       } catch (error) {
         toast.error('Gagal upload gambar');
         setUploadingImage(false);
@@ -140,13 +143,12 @@ export default function TicketDetailPage({ user }) {
     try {
       await axios.post(`${API}/tickets/${ticketId}/comments`, {
         comment: newComment || '[Gambar]',
-        image_url: imageUrl,
-        thumbnail_url: thumbnailUrl
+        images: uploadedImages.length > 0 ? uploadedImages : null
       });
       toast.success('Comment added successfully');
       setNewComment('');
-      setImageFile(null);
-      setImagePreview(null);
+      setImageFiles([]);
+      setImagePreviews([]);
       fetchComments();
     } catch (error) {
       toast.error('Failed to add comment');
@@ -162,9 +164,9 @@ export default function TicketDetailPage({ user }) {
         e.preventDefault();
         const file = item.getAsFile();
         if (file) {
-          setImageFile(file);
+          setImageFiles(prev => [...prev, file]);
           const reader = new FileReader();
-          reader.onload = (e) => setImagePreview(e.target.result);
+          reader.onload = (e) => setImagePreviews(prev => [...prev, e.target.result]);
           reader.readAsDataURL(file);
         }
         break;
@@ -173,19 +175,21 @@ export default function TicketDetailPage({ user }) {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setImageFile(file);
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(f => f.type.startsWith('image/'));
+
+    validFiles.forEach(file => {
+      setImageFiles(prev => [...prev, file]);
       const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.onload = (e) => setImagePreviews(prev => [...prev, e.target.result]);
       reader.readAsDataURL(file);
-    }
+    });
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const removeImage = (index) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteTicket = async () => {
@@ -383,22 +387,24 @@ export default function TicketDetailPage({ user }) {
                       </span>
                     </div>
                     <p className="text-slate-700">{comment.comment}</p>
-                    {comment.thumbnail_url && comment.thumbnail_url.trim() !== '' && (
-                      <div className="mt-2">
-                        <a
-                          href={`${API}${comment.image_url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block"
-                        >
-                          <img
-                            src={`${API}${comment.thumbnail_url}`}
-                            alt="Attachment"
-                            className="max-w-xs rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        </a>
-                        <p className="text-xs text-slate-500 mt-1">Klik untuk lihat ukuran penuh</p>
+                    {comment.images && comment.images.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {comment.images.map((img, idx) => (
+                          <a
+                            key={idx}
+                            href={`${API}${img.image_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block"
+                          >
+                            <img
+                              src={`${API}${img.thumbnail_url}`}
+                              alt={`Attachment ${idx + 1}`}
+                              className="max-w-[150px] rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </a>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -421,21 +427,25 @@ export default function TicketDetailPage({ user }) {
                 data-testid="comment-input"
               />
 
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="mt-2 relative inline-block">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="max-w-xs max-h-32 rounded border"
-                  />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+              {/* Image Previews */}
+              {imagePreviews.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative inline-block">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="max-w-[100px] max-h-24 rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -444,6 +454,7 @@ export default function TicketDetailPage({ user }) {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileSelect}
                 ref={fileInputRef}
                 className="hidden"
@@ -456,7 +467,7 @@ export default function TicketDetailPage({ user }) {
                 <Image className="w-4 h-4 mr-2" />
                 Attach
               </Button>
-              <Button type="submit" className="gap-2" disabled={uploadingImage || (!newComment.trim() && !imageFile)} data-testid="add-comment-button">
+              <Button type="submit" className="gap-2" disabled={uploadingImage || (!newComment.trim() && imageFiles.length === 0)} data-testid="add-comment-button">
                 {uploadingImage ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
                 ) : (

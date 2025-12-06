@@ -737,8 +737,10 @@ bot.on('photo', async (ctx) => {
                 user_telegram_id: String(userId),
                 user_telegram_name: username,
                 comment: caption || '[Gambar]',
-                image_url: uploadResult.image_url,
-                thumbnail_url: uploadResult.thumbnail_url
+                images: [{
+                    image_url: uploadResult.image_url,
+                    thumbnail_url: uploadResult.thumbnail_url
+                }]
             };
 
             // Use special endpoint for bot to add comment

@@ -1,20 +1,22 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 import uuid
+
+class ImageData(BaseModel):
+    image_url: str
+    thumbnail_url: str
 
 class CommentCreate(BaseModel):
     comment: str
-    image_url: Optional[str] = None
-    thumbnail_url: Optional[str] = None
+    images: Optional[List[ImageData]] = None
 
 class CommentCreateBot(BaseModel):
     ticket_number: str
     user_telegram_id: str
     user_telegram_name: str
     comment: str
-    image_url: Optional[str] = None
-    thumbnail_url: Optional[str] = None
+    images: Optional[List[ImageData]] = None
 
 class Comment(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -24,8 +26,8 @@ class Comment(BaseModel):
     username: str
     role: str
     comment: str
-    image_url: Optional[str] = None
-    thumbnail_url: Optional[str] = None
+    images: Optional[List[ImageData]] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sent_to_telegram: bool = False
-    read_by_agent: bool = False  # Track if agent has read this comment
+    read_by_agent: bool = False
+

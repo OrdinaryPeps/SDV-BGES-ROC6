@@ -289,8 +289,7 @@ async def add_comment(
         username=display_name,
         role=current_user.role,
         comment=comment_data.comment,
-        image_url=comment_data.image_url,
-        thumbnail_url=comment_data.thumbnail_url,
+        images=comment_data.images,
         sent_to_telegram=False
     )
     
@@ -303,20 +302,27 @@ async def add_comment(
     
     # Send notification to user if comment is from agent
     if current_user.role == "agent" and ticket.get('user_telegram_id'):
-        # If comment has image, send photo with caption
-        if comment_data.image_url:
+        # If comment has images, send first photo with caption, then rest without
+        if comment_data.images and len(comment_data.images) > 0:
             caption = (
                 f"💬 *Pesan Baru dari Agent*\n"
                 f"Tiket: *{ticket['ticket_number']}*\n"
                 f"Dari: *{display_name}*\n\n"
                 f"{comment_data.comment}"
             )
+            # Send first image with caption
             asyncio.create_task(send_telegram_photo(
                 ticket['user_telegram_id'], 
-                comment_data.image_url, 
+                comment_data.images[0].image_url, 
                 caption=caption, 
                 ticket_id=ticket_id
             ))
+            # Send additional images without caption
+            for img in comment_data.images[1:]:
+                asyncio.create_task(send_telegram_photo(
+                    ticket['user_telegram_id'], 
+                    img.image_url
+                ))
         else:
             # Text only message
             message = (
@@ -362,8 +368,7 @@ async def add_bot_comment(
         username=comment_data.user_telegram_name,
         role="user",
         comment=comment_data.comment,
-        image_url=comment_data.image_url,
-        thumbnail_url=comment_data.thumbnail_url,
+        images=comment_data.images,
         sent_to_telegram=True
     )
     
