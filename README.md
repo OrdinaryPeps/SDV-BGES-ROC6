@@ -77,7 +77,14 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - **User to Agent**: User kirim pesan/komentar dari bot Telegram -> Masuk ke ticket comment di Dashboard
 - **Agent to User**: Agent balas komentar dari Dashboard -> User terima notifikasi real-time di Telegram
 - **History Tracking**: Semua percakapan tersimpan rapi dalam history ticket
-- **Media Support**: (Future) Support kirim gambar/file
+
+### 📷 Image Upload & Compression
+- **Paste/Upload**: Agent bisa paste (Ctrl+V) atau upload gambar dari dashboard
+- **User Photo**: User bisa kirim foto melalui bot Telegram saat reply tiket
+- **Auto Compress**: Gambar dikompresi otomatis ke 80% quality, max 1200px
+- **Thumbnail**: Dibuat thumbnail 200x200 untuk preview (permanen)
+- **Auto Delete**: Original dihapus otomatis setelah 30 hari, thumbnail tetap tersimpan
+- **Storage**: Disimpan di server `/uploads/originals` dan `/uploads/thumbnails`
 
 ### 📋 Template Categories Support
 
