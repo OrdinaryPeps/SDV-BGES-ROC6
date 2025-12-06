@@ -383,7 +383,7 @@ export default function TicketDetailPage({ user }) {
                       </span>
                     </div>
                     <p className="text-slate-700">{comment.comment}</p>
-                    {comment.thumbnail_url && (
+                    {comment.thumbnail_url && comment.thumbnail_url.trim() !== '' && (
                       <div className="mt-2">
                         <a
                           href={`${API}${comment.image_url}`}
