@@ -102,8 +102,8 @@ async def upload_image(
         return {
             "success": True,
             "filename": filename,
-            "original_url": f"/api/uploads/originals/{filename}",
-            "thumbnail_url": f"/api/uploads/thumbnails/{filename}",
+            "original_url": f"/uploads/originals/{filename}",
+            "thumbnail_url": f"/uploads/thumbnails/{filename}",
             "original_size": original_size,
             "thumbnail_size": thumbnail_size,
             "uploaded_by": current_user.username,

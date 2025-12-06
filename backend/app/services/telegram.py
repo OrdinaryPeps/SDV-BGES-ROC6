@@ -85,7 +85,7 @@ async def send_telegram_photo(chat_id: str, photo_url: str, caption: str = None,
     
     # Construct full URL if relative path
     if photo_url.startswith('/'):
-        photo_url = f"https://roc-6-sdv-bges.site{photo_url}"
+        photo_url = f"https://roc-6-sdv-bges.site/api{photo_url}"
     
     url = f"https://api.telegram.org/bot{settings.BOT_TOKEN}/sendPhoto"
     payload = {
