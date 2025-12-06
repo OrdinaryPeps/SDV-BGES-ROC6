@@ -4,13 +4,17 @@ from pydantic import BaseModel
 import re
 from ..core.database import get_db
 from ..core.deps import get_current_user, is_admin_role, ADMIN_ROLES
-from ..core.security import get_password_hash
+from ..core.security import get_password_hash, verify_password
 from ..models.user import User
 from ..core.logging import logger
 
 router = APIRouter()
 
 class ResetPasswordRequest(BaseModel):
+    new_password: str
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
     new_password: str
 
 class UpdateProfileRequest(BaseModel):
@@ -152,3 +156,36 @@ async def update_profile(
     logger.info(f"User {current_user.id} updated profile: {update_data.keys()}")
     
     return {"message": "Profil berhasil diperbarui", "user": updated_user}
+
+@router.put("/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Change current user's password by verifying current password first"""
+    # Get user with password hash
+    user = await db.users.find_one({"id": current_user.id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    
+    # Verify current password
+    if not verify_password(request.current_password, user.get("password_hash", "")):
+        raise HTTPException(status_code=400, detail="Kata sandi saat ini salah")
+    
+    # Validate new password
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Kata sandi baru minimal 6 karakter")
+    
+    # Hash and update new password
+    hashed_password = get_password_hash(request.new_password)
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"password_hash": hashed_password}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Gagal mengganti kata sandi")
+    
+    logger.info(f"User {current_user.id} ({current_user.username}) changed password")
+    return {"message": "Kata sandi berhasil diubah"}
