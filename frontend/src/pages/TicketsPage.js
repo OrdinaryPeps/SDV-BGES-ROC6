@@ -299,13 +299,13 @@ export default function TicketsPage({ user }) {
           <button
             onClick={toggleSound}
             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${soundEnabled
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
               }`}
             title={soundEnabled ? 'Matikan suara notifikasi' : 'Nyalakan suara notifikasi'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            {soundEnabled ? 'Suara Aktif' : 'Suara Mati'}
+            {soundEnabled ? 'Suara Notif Aktif' : 'Suara Notif Mati'}
           </button>
         </div>
       </div>
