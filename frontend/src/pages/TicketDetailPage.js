@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API, isAdminRole } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -16,7 +16,7 @@ import {
 } from '../components/ui/select';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, User, Clock, Tag, MessageSquare, Send } from 'lucide-react';
+import { ArrowLeft, User, Clock, Tag, MessageSquare, Send, Image, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function TicketDetailPage({ user }) {
@@ -27,6 +27,10 @@ export default function TicketDetailPage({ user }) {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [agents, setAgents] = useState([]);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);;
 
   useEffect(() => {
     fetchTicket();
@@ -109,18 +113,79 @@ export default function TicketDetailPage({ user }) {
 
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() && !imageFile) return;
+
+    let imageUrl = null;
+    let thumbnailUrl = null;
+
+    // Upload image first if exists
+    if (imageFile) {
+      setUploadingImage(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const uploadRes = await axios.post(`${API}/uploads/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.original_url;
+        thumbnailUrl = uploadRes.data.thumbnail_url;
+      } catch (error) {
+        toast.error('Gagal upload gambar');
+        setUploadingImage(false);
+        return;
+      }
+      setUploadingImage(false);
+    }
 
     try {
       await axios.post(`${API}/tickets/${ticketId}/comments`, {
-        comment: newComment
+        comment: newComment || '[Gambar]',
+        image_url: imageUrl,
+        thumbnail_url: thumbnailUrl
       });
       toast.success('Comment added successfully');
       setNewComment('');
+      setImageFile(null);
+      setImagePreview(null);
       fetchComments();
     } catch (error) {
       toast.error('Failed to add comment');
     }
+  };
+
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          setImageFile(file);
+          const reader = new FileReader();
+          reader.onload = (e) => setImagePreview(e.target.result);
+          reader.readAsDataURL(file);
+        }
+        break;
+      }
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleDeleteTicket = async () => {
@@ -318,6 +383,24 @@ export default function TicketDetailPage({ user }) {
                       </span>
                     </div>
                     <p className="text-slate-700">{comment.comment}</p>
+                    {comment.thumbnail_url && (
+                      <div className="mt-2">
+                        <a
+                          href={`${API}${comment.image_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block"
+                        >
+                          <img
+                            src={`${API}${comment.thumbnail_url}`}
+                            alt="Attachment"
+                            className="max-w-xs rounded-lg border hover:opacity-90 transition-opacity cursor-pointer"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </a>
+                        <p className="text-xs text-slate-500 mt-1">Klik untuk lihat ukuran penuh</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -327,20 +410,60 @@ export default function TicketDetailPage({ user }) {
           {/* Add Comment Form */}
           <form onSubmit={handleAddComment} className="pt-4 border-t">
             <Label>Add Comment</Label>
-            <div className="flex gap-2 mt-2">
+            <div className="mt-2">
               <Textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Type your comment here..."
-                className="flex-1"
+                onPaste={handlePaste}
+                placeholder="Ketik komentar atau Ctrl+V untuk paste gambar..."
+                className="w-full"
                 rows={3}
                 data-testid="comment-input"
               />
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="mt-2 relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-w-xs max-h-32 rounded border"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
-            <Button type="submit" className="mt-3 gap-2" data-testid="add-comment-button">
-              <Send className="w-4 h-4" />
-              Send Comment
-            </Button>
+
+            <div className="flex gap-2 mt-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                ref={fileInputRef}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Image className="w-4 h-4 mr-2" />
+                Attach
+              </Button>
+              <Button type="submit" className="gap-2" disabled={uploadingImage || (!newComment.trim() && !imageFile)} data-testid="add-comment-button">
+                {uploadingImage ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
+                ) : (
+                  <><Send className="w-4 h-4" /> Send</>
+                )}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

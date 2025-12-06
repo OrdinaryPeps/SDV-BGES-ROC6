@@ -2,6 +2,7 @@ const { Telegraf, Markup } = require('telegraf');
 const axios = require('axios');
 const chalk = require('chalk');
 const Redis = require('ioredis');
+const FormData = require('form-data');
 require('dotenv').config();
 
 // ========== CONFIGURATION ==========
@@ -122,6 +123,53 @@ async function apiRequest(method, endpoint, data = null, userId = null) {
         }
         logError(`API Request failed: ${error.message}`);
         return { success: false, error: error.message };
+    }
+}
+
+// Upload image from Telegram to server for compression
+async function uploadImageToServer(ctx, fileId) {
+    try {
+        // Get file info from Telegram
+        const file = await ctx.telegram.getFile(fileId);
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
+
+        // Download file from Telegram
+        const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data);
+
+        // Get admin token for upload
+        const token = await getOrLoginAdminToken(ADMIN_IDS[0]);
+        if (!token) {
+            logError('Failed to get admin token for image upload');
+            return null;
+        }
+
+        // Create form data
+        const formData = new FormData();
+        formData.append('file', buffer, {
+            filename: 'telegram_photo.jpg',
+            contentType: 'image/jpeg'
+        });
+
+        // Upload to server
+        const uploadResponse = await axios.post(`${API_URL}/uploads/upload`, formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (uploadResponse.data.success) {
+            logSuccess(`Image uploaded: ${uploadResponse.data.filename}`);
+            return {
+                image_url: uploadResponse.data.original_url,
+                thumbnail_url: uploadResponse.data.thumbnail_url
+            };
+        }
+        return null;
+    } catch (error) {
+        logError(`Failed to upload image: ${error.message}`);
+        return null;
     }
 }
 
@@ -654,6 +702,65 @@ bot.action(/qc2_product_(.+)/, async (ctx) => {
         'Sesuaikan format dan balas pesan ini dengan format yang sudah disesuaikan dengan permintaan anda.',
         { parse_mode: 'Markdown' }
     );
+});
+
+// ========== PHOTO HANDLER ==========
+bot.on('photo', async (ctx) => {
+    const userId = ctx.from.id;
+    let state = await getUserState(userId);
+
+    if (!state) return;
+
+    // Only handle photo if user is replying to a ticket
+    if (state.step === 'replyingComment') {
+        const ticketNumber = state.ticketNumber;
+        const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
+        const caption = ctx.message.caption || '';
+
+        await ctx.reply('⏳ Mengupload gambar...');
+
+        try {
+            // Get largest photo (last in array)
+            const photo = ctx.message.photo.pop();
+            const fileId = photo.file_id;
+
+            // Upload image to server for compression
+            const uploadResult = await uploadImageToServer(ctx, fileId);
+
+            if (!uploadResult) {
+                await ctx.reply('❌ Gagal mengupload gambar. Silahkan coba lagi.');
+                return;
+            }
+
+            const commentData = {
+                ticket_number: ticketNumber,
+                user_telegram_id: String(userId),
+                user_telegram_name: username,
+                comment: caption || '[Gambar]',
+                image_url: uploadResult.image_url,
+                thumbnail_url: uploadResult.thumbnail_url
+            };
+
+            // Use special endpoint for bot to add comment
+            const result = await apiRequest('POST', '/tickets/bot-comments', commentData, ADMIN_IDS[0]);
+
+            if (result.success) {
+                await ctx.reply(`✅ Gambar untuk tiket *${ticketNumber}* berhasil dikirim.`, { parse_mode: 'Markdown' });
+            } else {
+                logError(`Failed to send photo reply: ${result.error}`);
+                await ctx.reply(`❌ Gagal mengirim gambar: ${result.error || 'Silahkan coba lagi nanti.'}`);
+            }
+        } catch (error) {
+            logError(`Error uploading photo: ${error}`);
+            await ctx.reply('❌ Terjadi kesalahan saat mengupload gambar.');
+        }
+
+        await setUserState(userId, { step: 'mainMenu' });
+        return;
+    }
+
+    // Ignore photos outside of reply context
+    await ctx.reply('ℹ️ Gunakan perintah /reply untuk membalas tiket dengan gambar.');
 });
 
 // ========== INPUT PARSING HANDLER ==========

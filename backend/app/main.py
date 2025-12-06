@@ -5,7 +5,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .core.config import settings
 from .core.logging import logger
-from .routers import auth, users, tickets, stats, webhook, notifications, performance, export
+from .routers import auth, users, tickets, stats, webhook, notifications, performance, export, uploads
 
 # Rate limiter setup
 limiter = Limiter(key_func=get_remote_address)
@@ -38,8 +38,7 @@ app.include_router(stats.router, prefix=f"{settings.API_V1_STR}/statistics", tag
 app.include_router(performance.router, prefix=f"{settings.API_V1_STR}/performance", tags=["performance"])
 app.include_router(export.router, prefix=f"{settings.API_V1_STR}/export", tags=["export"])
 app.include_router(webhook.router, prefix=f"{settings.API_V1_STR}/webhook", tags=["webhook"])
-
-
+app.include_router(uploads.router, prefix=f"{settings.API_V1_STR}/uploads", tags=["uploads"])
 app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["notifications"])
 
 @app.get("/")

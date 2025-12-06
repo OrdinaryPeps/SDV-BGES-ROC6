@@ -232,7 +232,7 @@ async def update_ticket(
         if updated_ticket.get('user_telegram_id'):
             message = (
                 f"Tiket laporan *{ticket_number}* sudah *RESOLVED*, "
-                f"silahkan diperiksa kembali. Terimakasih. 🙏"
+                f"silahkan diperiksa kembali. Jika masih ada kendala silahkan reopen tiket atau ke grup support. Terimakasih 🙏"
             )
             asyncio.create_task(send_telegram_message(updated_ticket.get('user_telegram_id'), message))
         
@@ -241,7 +241,7 @@ async def update_ticket(
             group_message = (
                 f"✅ *Tiket Selesai*\n\n"
                 f"Tiket laporan *{ticket_number}* sudah *RESOLVED*, "
-                f"silahkan diperiksa kembali ({user_name}). Terimakasih."
+                f"silahkan diperiksa kembali ({user_name}). Jika masih ada kendala silahkan reopen tiket atau ke grup support. Terimakasih."
             )
             asyncio.create_task(send_telegram_message(settings.GROUP_CHAT_ID, group_message))
     
@@ -289,6 +289,8 @@ async def add_comment(
         username=display_name,
         role=current_user.role,
         comment=comment_data.comment,
+        image_url=comment_data.image_url,
+        thumbnail_url=comment_data.thumbnail_url,
         sent_to_telegram=False
     )
     
@@ -344,6 +346,8 @@ async def add_bot_comment(
         username=comment_data.user_telegram_name,
         role="user",
         comment=comment_data.comment,
+        image_url=comment_data.image_url,
+        thumbnail_url=comment_data.thumbnail_url,
         sent_to_telegram=True
     )
     
