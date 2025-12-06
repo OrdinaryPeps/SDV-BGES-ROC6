@@ -79,12 +79,19 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - **History Tracking**: Semua percakapan tersimpan rapi dalam history ticket
 
 ### 📷 Image Upload & Compression
+- **Multiple Images**: Mendukung upload multiple gambar per komentar
 - **Paste/Upload**: Agent bisa paste (Ctrl+V) atau upload gambar dari dashboard
 - **User Photo**: User bisa kirim foto melalui bot Telegram saat reply tiket
 - **Auto Compress**: Gambar dikompresi otomatis ke 80% quality, max 1200px
 - **Thumbnail**: Dibuat thumbnail 200x200 untuk preview (permanen)
 - **Auto Delete**: Original dihapus otomatis setelah 30 hari, thumbnail tetap tersimpan
 - **Storage**: Disimpan di server `/uploads/originals` dan `/uploads/thumbnails`
+
+> **Migration Note**: Jika upgrade dari versi sebelumnya, jalankan di MongoDB:
+> ```javascript
+> use telegram_ticket_db
+> db.comments.updateMany({"images.image_url": {$regex: "^/api/"}}, [{$set: {"images": {$map: {input: "$images", as: "img", in: {image_url: {$replaceOne: {input: "$$img.image_url", find: "/api/uploads", replacement: "/uploads"}}, thumbnail_url: {$replaceOne: {input: "$$img.thumbnail_url", find: "/api/uploads", replacement: "/uploads"}}}}}}}])
+> ```
 
 ### 📋 Template Categories Support
 
