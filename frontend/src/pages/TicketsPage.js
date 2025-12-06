@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Clock, User, Tag, MessageCircle, Filter, Search, X, Volume2, VolumeX } from 'lucide-react';
+import { Clock, User, Tag, MessageCircle, Filter, Search, X, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -21,6 +21,8 @@ export default function TicketsPage({ user }) {
   const [todayOnly, setTodayOnly] = useState(false);
   const [unreadTickets, setUnreadTickets] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const TICKETS_PER_PAGE = 10;
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationSound');
     return saved !== 'false'; // Default true
@@ -249,6 +251,17 @@ export default function TicketsPage({ user }) {
 
   const filteredTickets = filterTickets(tickets);
 
+  // Pagination logic - disabled when searching
+  const totalPages = Math.ceil(filteredTickets.length / TICKETS_PER_PAGE);
+  const paginatedTickets = searchQuery
+    ? filteredTickets
+    : filteredTickets.slice((currentPage - 1) * TICKETS_PER_PAGE, currentPage * TICKETS_PER_PAGE);
+
+  // Reset to page 1 when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, todayOnly]);
+
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
@@ -413,57 +426,91 @@ export default function TicketsPage({ user }) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {filteredTickets.map((ticket) => (
-                <Card
-                  key={ticket.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer relative"
-                  onClick={() => handleTicketClick(ticket.id)}
-                  data-testid={`ticket-card-${ticket.ticket_number}`}
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900">
-                            {ticket.ticket_number}
-                          </h3>
-                          <Badge className={getStatusBadge(ticket.status)}>
-                            {ticket.status.replace('_', ' ')}
-                          </Badge>
-                          {/* Unread Badge */}
-                          {user.role === 'agent' && unreadTickets.includes(ticket.id) && (
-                            <Badge variant="destructive" className="flex items-center gap-1">
-                              <MessageCircle className="w-3 h-3" />
-                              Balasan Baru
+            <div className="space-y-4">
+              <div className="grid gap-4">
+                {paginatedTickets.map((ticket) => (
+                  <Card
+                    key={ticket.id}
+                    className="hover:shadow-lg transition-shadow cursor-pointer relative"
+                    onClick={() => handleTicketClick(ticket.id)}
+                    data-testid={`ticket-card-${ticket.ticket_number}`}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-slate-900">
+                              {ticket.ticket_number}
+                            </h3>
+                            <Badge className={getStatusBadge(ticket.status)}>
+                              {ticket.status.replace('_', ' ')}
                             </Badge>
-                          )}
-                        </div>
-                        <p className="text-slate-600 mb-3 line-clamp-2">{ticket.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
-                            <Tag className="w-4 h-4" />
-                            {ticket.category}
-                            {ticket.permintaan && (
-                              <span className="text-blue-600"> - {ticket.permintaan}</span>
+                            {/* Unread Badge */}
+                            {user.role === 'agent' && unreadTickets.includes(ticket.id) && (
+                              <Badge variant="destructive" className="flex items-center gap-1">
+                                <MessageCircle className="w-3 h-3" />
+                                Balasan Baru
+                              </Badge>
                             )}
-                          </span>
-                          {ticket.assigned_agent_name && (
+                          </div>
+                          <p className="text-slate-600 mb-3 line-clamp-2">{ticket.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
+                              <Tag className="w-4 h-4" />
+                              {ticket.category}
+                              {ticket.permintaan && (
+                                <span className="text-blue-600"> - {ticket.permintaan}</span>
+                              )}
+                            </span>
+                            {ticket.assigned_agent_name && (
+                              <div className="flex items-center gap-1">
+                                <User className="w-4 h-4" />
+                                <span>{ticket.assigned_agent_name}</span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
-                              <User className="w-4 h-4" />
-                              <span>{ticket.assigned_agent_name}</span>
+                              <Clock className="w-4 h-4" />
+                              <span>{format(new Date(ticket.created_at), 'MMM dd, yyyy')}</span>
                             </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{format(new Date(ticket.created_at), 'MMM dd, yyyy')}</span>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination Controls - only show when not searching and more than 1 page */}
+              {!searchQuery && totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <p className="text-sm text-slate-600">
+                    Menampilkan {((currentPage - 1) * TICKETS_PER_PAGE) + 1} - {Math.min(currentPage * TICKETS_PER_PAGE, filteredTickets.length)} dari {filteredTickets.length} tiket
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Prev
+                    </Button>
+                    <span className="text-sm font-medium px-3">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>

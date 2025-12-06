@@ -296,6 +296,11 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - ✅ Performance Report auto-loads with current month as default
 - ✅ Auto-reload on filter change (debounced)
 - ✅ Empty data hidden in reports (0 values shown as blank)
+- ✅ **Pagination**: Ticket list shows 10 per page with navigation controls
+  - "Prev" and "Next" buttons for navigation
+  - Page indicator showing current page and total pages
+  - Pagination disabled during search (shows all results)
+- ✅ **Sound Notifications**: Toggle on/off for new ticket and reply alerts
 
 ### Bug Fixes
 - ✅ Fixed QC2 and LEPAS BI category duplication
@@ -303,12 +308,20 @@ Dashboard web untuk monitoring dan manajemen tiket dari bot Telegram dengan sist
 - ✅ Fixed year filter in performance dashboard (ISO string handling)
 - ✅ Fixed bot API connection (port configuration)
 - ✅ Fixed reply endpoint routing conflict
+- ✅ **Fixed WebSocket memory leak**: Ping interval now properly cleared on component unmount
+- ✅ **Fixed filter layout**: Added whitespace-nowrap to prevent text wrapping on small screens
 
 ### Performance Optimizations
 - ✅ Redis caching for dashboard statistics
 - ✅ Debounced filter auto-reload (500ms)
 - ✅ WebSocket connection health monitoring
 - ✅ Telegram HTTP client connection pooling
+- ✅ **API Timeout**: Added 10 second timeout for bot API requests to prevent hanging
+
+### Security & Account Management
+- ✅ **Change Password**: Users can change their own password via Account Settings
+- ✅ **Update Profile**: Users can update their name and username
+- ✅ **Admin Reset Password**: Admins can reset password for agents/other admins
 
 ## Contributing
 
