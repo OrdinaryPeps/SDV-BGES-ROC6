@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Clock, User, Tag, MessageCircle, Filter, Search, X } from 'lucide-react';
+import { Clock, User, Tag, MessageCircle, Filter, Search, X, Volume2, VolumeX } from 'lucide-react';
 import { format } from 'date-fns';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -21,8 +21,32 @@ export default function TicketsPage({ user }) {
   const [todayOnly, setTodayOnly] = useState(false);
   const [unreadTickets, setUnreadTickets] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('notificationSound');
+    return saved !== 'false'; // Default true
+  });
   const navigate = useNavigate();
   const wsRef = useRef(null);
+  const audioRef = useRef(null);
+
+  // Initialize audio element
+  useEffect(() => {
+    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audioRef.current.volume = 0.5;
+  }, []);
+
+  const playNotificationSound = () => {
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => { }); // Ignore autoplay errors
+    }
+  };
+
+  const toggleSound = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem('notificationSound', newValue.toString());
+  };
 
   // Request browser notification permission on load
   useEffect(() => {
@@ -68,6 +92,7 @@ export default function TicketsPage({ user }) {
         if (data.type === 'new_ticket') {
           toast.success('🎫 Tiket baru tersedia!');
           fetchOpenTickets();
+          playNotificationSound();
 
           // Browser notification
           if (Notification.permission === 'granted') {
@@ -80,6 +105,7 @@ export default function TicketsPage({ user }) {
           toast.info(`💬 Balasan baru dari ${data.data.user_name} pada tiket ${data.data.ticket_number}`);
           fetchUnreadReplies();
           fetchTickets(); // Refresh current tab to show updated data
+          playNotificationSound();
 
           // Browser notification
           if (Notification.permission === 'granted') {
@@ -268,6 +294,19 @@ export default function TicketsPage({ user }) {
               Hari Ini Saja
             </Label>
           </div>
+
+          {/* Sound Toggle */}
+          <button
+            onClick={toggleSound}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${soundEnabled
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            title={soundEnabled ? 'Matikan suara notifikasi' : 'Nyalakan suara notifikasi'}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {soundEnabled ? 'Suara Aktif' : 'Suara Mati'}
+          </button>
         </div>
       </div>
 
