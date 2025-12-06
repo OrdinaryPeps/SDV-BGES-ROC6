@@ -14,7 +14,7 @@ from ..core.deps import get_current_user, is_admin_role
 from ..models.user import User
 from ..models.ticket import Ticket, TicketCreate, TicketUpdate
 from ..models.comment import Comment, CommentCreate, CommentCreateBot
-from ..services.telegram import send_telegram_message
+from ..services.telegram import send_telegram_message, send_telegram_photo
 from ..core.logging import logger
 from . import notifications
 
@@ -303,13 +303,29 @@ async def add_comment(
     
     # Send notification to user if comment is from agent
     if current_user.role == "agent" and ticket.get('user_telegram_id'):
-        message = (
-            f"💬 *Pesan Baru dari Agent*\n"
-            f"Tiket: *{ticket['ticket_number']}*\n"
-            f"Dari: *{display_name}*\n\n"
-            f"{comment_data.comment}"
-        )
-        asyncio.create_task(send_telegram_message(ticket['user_telegram_id'], message, ticket_id=ticket_id))
+        # If comment has image, send photo with caption
+        if comment_data.image_url:
+            caption = (
+                f"💬 *Pesan Baru dari Agent*\n"
+                f"Tiket: *{ticket['ticket_number']}*\n"
+                f"Dari: *{display_name}*\n\n"
+                f"{comment_data.comment}"
+            )
+            asyncio.create_task(send_telegram_photo(
+                ticket['user_telegram_id'], 
+                comment_data.image_url, 
+                caption=caption, 
+                ticket_id=ticket_id
+            ))
+        else:
+            # Text only message
+            message = (
+                f"💬 *Pesan Baru dari Agent*\n"
+                f"Tiket: *{ticket['ticket_number']}*\n"
+                f"Dari: *{display_name}*\n\n"
+                f"{comment_data.comment}"
+            )
+            asyncio.create_task(send_telegram_message(ticket['user_telegram_id'], message, ticket_id=ticket_id))
         
         # TODO: Enable group notifications in the future
         # if settings.GROUP_CHAT_ID:
